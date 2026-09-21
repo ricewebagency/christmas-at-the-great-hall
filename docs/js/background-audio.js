@@ -16,18 +16,31 @@ function unlockBackgroundAudio() {
 
 const SORTING_HAT_IMAGE_SOURCES = [
     './assets/images/sorting-hat-talking-1.png',
-    './assets/images/sorting-hat-talking-3.png',
     './assets/images/sorting-hat-talking-5.png',
-    './assets/images/sorting-hat-talking-6.png',
-    './assets/images/sorting-hat-talking-7.png'
+    './assets/images/sorting-hat-talking-6.png'
 ];
+
 const SORTING_HAT_AUDIO_DELAY_MS = 1;
-const SORTING_HAT_IMAGE_CYCLE_MIN_MS = 1000;
-const SORTING_HAT_IMAGE_CYCLE_MAX_MS = 3500;
-const SORTING_HAT_IMAGE_CYCLE_DURATION_MS = 12000;
+const SORTING_HAT_IMAGE_CYCLE_MIN_MS = 100;
+const SORTING_HAT_IMAGE_CYCLE_MAX_MS = 400;
+const SORTING_HAT_IMAGE_CYCLE_DURATION_MS = 11000;
 
 let sortingHatAudioDelayElapsed = false;
 let sortingHatAudioStarted = false;
+let sortingHatAudioCancelled = false;
+
+function cancelSortingHatWelcomeAudio() {
+    sortingHatAudioCancelled = true;
+
+    const audio = document.getElementById("background-audio-2");
+
+    if (!(audio instanceof HTMLAudioElement)) {
+        return;
+    }
+
+    audio.pause();
+    audio.currentTime = 0;
+}
 
 function getNextSortingHatImageSource(currentSource) {
     const candidates = SORTING_HAT_IMAGE_SOURCES.filter((source) => source !== currentSource);
@@ -35,6 +48,16 @@ function getNextSortingHatImageSource(currentSource) {
     const randomIndex = Math.floor(Math.random() * pool.length);
 
     return pool[randomIndex];
+}
+
+function switchSortingHatImageNow() {
+    const image = document.getElementById("sorting-hat-image");
+
+    if (!(image instanceof HTMLImageElement)) {
+        return;
+    }
+
+    image.src = getNextSortingHatImageSource(image.getAttribute("src") ?? "");
 }
 
 function startSortingHatImageCycle() {
@@ -58,7 +81,7 @@ function startSortingHatImageCycle() {
         const delay = SORTING_HAT_IMAGE_CYCLE_MIN_MS + Math.random() * (maxDelay - SORTING_HAT_IMAGE_CYCLE_MIN_MS);
 
         window.setTimeout(() => {
-            image.src = getNextSortingHatImageSource(image.getAttribute("src") ?? "");
+            switchSortingHatImageNow();
             scheduleNextSwap();
         }, delay);
     };
@@ -67,7 +90,7 @@ function startSortingHatImageCycle() {
 }
 
 function tryStartSortingHatAudio() {
-    if (sortingHatAudioStarted || !sortingHatAudioDelayElapsed) {
+    if (sortingHatAudioCancelled || sortingHatAudioStarted || !sortingHatAudioDelayElapsed) {
         return;
     }
 
@@ -89,12 +112,18 @@ function tryStartSortingHatAudio() {
 
 function playDelayedSortingAudio() {
     window.setTimeout(() => {
+        if (sortingHatAudioCancelled) {
+            return;
+        }
+
         sortingHatAudioDelayElapsed = true;
         tryStartSortingHatAudio();
     }, SORTING_HAT_AUDIO_DELAY_MS);
 }
 
 window.unlockBackgroundAudio = unlockBackgroundAudio;
+window.cancelSortingHatWelcomeAudio = cancelSortingHatWelcomeAudio;
+window.switchSortingHatImageNow = switchSortingHatImageNow;
 
 document.addEventListener("DOMContentLoaded", () => {
     const audio = document.getElementById("background-audio");

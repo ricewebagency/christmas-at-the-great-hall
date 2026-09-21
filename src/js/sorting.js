@@ -38,6 +38,9 @@ const SORTING_HAT_FRAGMENT_SOURCES = [
 const SORTING_HAT_FRAGMENT_HISTORY_LIMIT = 10;
 const QUESTION_TRANSITION_MS = 220;
 const BUTTON_STAGGER_MS = 60;
+const AUDIO_PLAY_COOLDOWN_MS = 1000;
+let nextAllowedAudioPlayAt = 0;
+let pendingAudioStart = Promise.resolve();
 
 function createEmptyScores() {
     return Object.fromEntries(HOUSE_ORDER.map((house) => [house, 0]));
@@ -67,10 +70,6 @@ function getAnswerGridClass(answerCount) {
 
     if (answerCount === 2) {
         return 'grid gap-3 sm:grid-cols-2';
-    }
-
-    if (answerCount > 4) {
-        return 'grid max-h-[60vh] gap-3 overflow-y-auto pr-2 sm:max-h-[28rem] sm:grid-cols-2';
     }
 
     return 'grid gap-3 sm:grid-cols-2';
@@ -132,6 +131,34 @@ function createAudio(source, volume = 0.95) {
     return audio;
 }
 
+function reserveAudioStartSlot() {
+    pendingAudioStart = pendingAudioStart.then(
+        () =>
+            new Promise((resolve) => {
+                const waitMs = Math.max(0, nextAllowedAudioPlayAt - Date.now());
+
+                window.setTimeout(() => {
+                    nextAllowedAudioPlayAt = Date.now() + AUDIO_PLAY_COOLDOWN_MS;
+                    resolve();
+                }, waitMs);
+            })
+    );
+
+    return pendingAudioStart;
+}
+
+function releaseAudioStartSlot() {
+    nextAllowedAudioPlayAt = Date.now();
+}
+
+function createAudioPlaybackError(error) {
+    if (error instanceof Error) {
+        return error;
+    }
+
+    return new Error('Audio playback failed.');
+}
+
 function playAudioAndWait(audio) {
     return new Promise((resolve, reject) => {
         const cleanup = () => {
@@ -152,10 +179,13 @@ function playAudioAndWait(audio) {
         audio.addEventListener('ended', handleEnded, { once: true });
         audio.addEventListener('error', handleError, { once: true });
 
-        audio.play().catch((error) => {
-            cleanup();
-            reject(error);
-        });
+        reserveAudioStartSlot()
+            .then(() => audio.play())
+            .catch((error) => {
+                cleanup();
+                releaseAudioStartSlot();
+                reject(createAudioPlaybackError(error));
+            });
     });
 }
 
@@ -197,7 +227,9 @@ function initSortingQuiz() {
     const progressEl = document.getElementById('sorting-progress');
     const questionEl = document.getElementById('sorting-question');
     const optionsEl = document.getElementById('sorting-options');
+    const optionsContainerEl = optionsEl?.parentElement;
     const resultEl = document.getElementById('sorting-result');
+    const resultHouseEl = document.getElementById('sorting-house-name');
     const resultCopyEl = document.getElementById('sorting-result-copy');
     const restartButton = document.getElementById('sorting-restart');
 
@@ -205,7 +237,9 @@ function initSortingQuiz() {
         !(progressEl instanceof HTMLElement) ||
         !(questionEl instanceof HTMLElement) ||
         !(optionsEl instanceof HTMLElement) ||
+        !(optionsContainerEl instanceof HTMLElement) ||
         !(resultEl instanceof HTMLElement) ||
+        !(resultHouseEl instanceof HTMLElement) ||
         !(resultCopyEl instanceof HTMLElement) ||
         !(restartButton instanceof HTMLButtonElement)
     ) {
@@ -219,10 +253,19 @@ function initSortingQuiz() {
     let isTransitioning = false;
     let playedSortingHatFragments = [];
     let activeSortingHatFragments = new Set();
+    let sortingHatFragmentPlaybackToken = 0;
     let revealHouseButton = null;
     let pendingRevealHouse = null;
     let houseRevealAudio = null;
     let houseRevealLocked = false;
+
+    function setQuizPromptVisibility(isVisible) {
+        const method = isVisible ? 'remove' : 'add';
+
+        progressEl.classList[method]('hidden');
+        questionEl.classList[method]('hidden');
+        optionsContainerEl.classList[method]('hidden');
+    }
 
     function persistState() {
         safeStoreState({
@@ -232,6 +275,8 @@ function initSortingQuiz() {
     }
 
     function resetSortingHatFragments() {
+        sortingHatFragmentPlaybackToken += 1;
+
         activeSortingHatFragments.forEach((audio) => {
             audio.pause();
             audio.currentTime = 0;
@@ -287,29 +332,29 @@ function initSortingQuiz() {
         const source = getRevealHouseAudio(house, 'second');
 
         const finalizeReveal = () => {
+            resultEl.style.animation = 'none';
             resultEl.classList.remove('hidden', 'opacity-0');
             resultEl.classList.add('opacity-100');
-            progressEl.textContent = 'Result';
-            questionEl.textContent = 'Sorting complete';
             optionsEl.innerHTML = '';
-            resultCopyEl.classList.remove('hidden');
-            restartButton.classList.remove('hidden');
-            resultCopyEl.textContent = `${formatHouseName(house)} has the highest score. The result has been saved locally and sent through the mock API.`;
+            resultHouseEl.textContent = `${formatHouseName(house)}!`;
+            resultCopyEl.classList.add('hidden');
+            resultCopyEl.textContent = '';
+            restartButton.classList.add('hidden');
 
             if (!hasSentResult) {
                 hasSentResult = true;
+
                 void sendSortingHouseResult({
                     house,
                     scores: { ...scores },
                     questionsAnswered: questions.length
-                }).catch(() => {
-                    resultCopyEl.textContent = `${formatHouseName(house)} has the highest score, but the mock API call failed.`;
                 });
             }
         };
 
+        finalizeReveal();
+
         if (!source) {
-            finalizeReveal();
             return;
         }
 
@@ -321,10 +366,8 @@ function initSortingQuiz() {
         houseRevealAudio = createAudio(source, 0.95);
 
         playAudioAndWait(houseRevealAudio)
-            .then(finalizeReveal)
             .catch((error) => {
                 console.info('Sorting Hat reveal audio was blocked by the browser.', error);
-                finalizeReveal();
             })
             .finally(() => {
                 houseRevealLocked = false;
@@ -342,7 +385,7 @@ function initSortingQuiz() {
 
         revealHouseButton = document.createElement('button');
         revealHouseButton.type = 'button';
-        revealHouseButton.className = 'group flex w-full items-center justify-between rounded-none border border-amber-100/20 bg-amber-50/5 px-4 py-3 text-left text-sm text-amber-50 transition-colors duration-200 hover:border-amber-50/30 hover:bg-amber-50/10 focus:outline-none focus-visible:outline-none sm:text-base';
+        revealHouseButton.className = 'group flex w-full items-center justify-between rounded-none border px-4 py-3 text-center text-sm text-amber-50 transition-colors duration-200 focus:outline-none focus-visible:outline-none sm:text-base';
         revealHouseButton.textContent = 'Reveal house';
 
         revealHouseButton.addEventListener('click', () => {
@@ -365,6 +408,16 @@ function initSortingQuiz() {
     }
 
     function playSortingHatFragment() {
+        sortingHatFragmentPlaybackToken += 1;
+        const playbackToken = sortingHatFragmentPlaybackToken;
+
+        activeSortingHatFragments.forEach((activeAudio) => {
+            activeAudio.pause();
+            activeAudio.currentTime = 0;
+        });
+
+        activeSortingHatFragments.clear();
+
         const source = getRandomSortingHatFragmentSource(playedSortingHatFragments);
         const audio = createAudio(source);
         activeSortingHatFragments.add(audio);
@@ -378,21 +431,45 @@ function initSortingQuiz() {
 
         playedSortingHatFragments = [...playedSortingHatFragments, source].slice(-SORTING_HAT_FRAGMENT_HISTORY_LIMIT);
 
-        audio.play().catch((error) => {
-            activeSortingHatFragments.delete(audio);
-            const failedSourceIndex = playedSortingHatFragments.lastIndexOf(source);
+        reserveAudioStartSlot()
+            .then(() => {
+                if (playbackToken !== sortingHatFragmentPlaybackToken) {
+                    activeSortingHatFragments.delete(audio);
+                    const staleSourceIndex = playedSortingHatFragments.lastIndexOf(source);
 
-            if (failedSourceIndex !== -1) {
-                playedSortingHatFragments.splice(failedSourceIndex, 1);
-            }
+                    if (staleSourceIndex !== -1) {
+                        playedSortingHatFragments.splice(staleSourceIndex, 1);
+                    }
 
-            console.info('Sorting Hat fragment autoplay was blocked by the browser.', error);
-        });
+                    return;
+                }
+
+                return audio.play();
+            })
+            .catch((error) => {
+                releaseAudioStartSlot();
+                activeSortingHatFragments.delete(audio);
+                const failedSourceIndex = playedSortingHatFragments.lastIndexOf(source);
+
+                if (failedSourceIndex !== -1) {
+                    playedSortingHatFragments.splice(failedSourceIndex, 1);
+                }
+
+                console.info('Sorting Hat fragment autoplay was blocked by the browser.', error);
+            });
     }
 
     function applyAnswer(answer) {
         if (isTransitioning) {
             return;
+        }
+
+        if (typeof window.cancelSortingHatWelcomeAudio === 'function') {
+            window.cancelSortingHatWelcomeAudio();
+        }
+
+        if (typeof window.switchSortingHatImageNow === 'function') {
+            window.switchSortingHatImageNow();
         }
 
         HOUSE_ORDER.forEach((house) => {
@@ -401,18 +478,21 @@ function initSortingQuiz() {
 
         currentQuestionIndex += 1;
         persistState();
-        playSortingHatFragment();
+
+        if (currentQuestionIndex < questions.length) {
+            playSortingHatFragment();
+        }
+
         void renderQuestion();
     }
 
     function renderResult() {
         const winningHouse = getWinningHouse(scores);
 
-        progressEl.textContent = 'Result';
+        setQuizPromptVisibility(false);
         optionsEl.innerHTML = '';
         resultEl.classList.add('hidden');
         resultEl.classList.remove('opacity-100');
-        questionEl.textContent = 'Sorting complete';
         resultCopyEl.classList.add('hidden');
         restartButton.classList.add('hidden');
         resetHouseRevealState();
@@ -442,6 +522,7 @@ function initSortingQuiz() {
             optionsEl.classList.remove('pointer-events-none');
         }
 
+        setQuizPromptVisibility(true);
         resultEl.classList.add('hidden');
         resultEl.classList.remove('opacity-100');
         progressEl.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
@@ -456,7 +537,7 @@ function initSortingQuiz() {
         answers.forEach((answer, index) => {
             const button = document.createElement('button');
             button.type = 'button';
-            button.className = 'group flex items-center justify-between rounded-none border border-amber-100/20 bg-amber-50/5 px-4 py-3 text-left text-sm text-amber-50 transition-all duration-200 ease-out hover:border-amber-50/30 hover:bg-amber-50/10 focus:outline-none focus-visible:outline-none sm:text-base';
+            button.className = 'group flex items-center justify-between rounded-none border border-amber-100/5 bg-amber-50/5 px-4 py-3 text-left text-sm text-amber-50 transition-all duration-200 ease-out hover:border-amber-50/30 hover:bg-amber-50/10 focus:outline-none focus-visible:outline-none sm:text-base';
 
             const answerText = document.createElement('span');
             answerText.textContent = answer.text;
