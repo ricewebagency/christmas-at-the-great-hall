@@ -1,9 +1,10 @@
-const invitation = {
-    guestName: "Maurice",
-    eventDate: "2026-12-24T18:00:00",
-    location: "Assendelft",
-    rsvpStatus: "pending"
-};
+import {
+    lockInitialViewportHeight,
+    pathEndsWith,
+    runRevealExitSequence,
+    setupLinkExitTransition
+} from "./page-transitions.js";
+import { getInvitationData } from "./api-client.js";
 
 const RSVP_LABELS = {
     pending: "Awaiting your response",
@@ -27,15 +28,7 @@ const ENVELOPE_TOP_FILTERS = {
     opened: "drop-shadow(0 46px 40px rgba(0, 0, 0, 0.5))"
 };
 
-function lockInitialViewportHeight() {
-    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-    document.documentElement.style.setProperty("--locked-vh", `${viewportHeight}px`);
-}
-
-function getInvitationData() {
-    // Placeholder for future API call (Azure Function). Keep return shape stable.
-    return invitation;
-}
+const RSVP_EXIT_FADE_DURATION_MS = 800;
 
 function pad(value) {
     return String(value).padStart(2, "0");
@@ -158,6 +151,10 @@ function waitForInviteLoaderActivation(loaderEl) {
                 event.preventDefault();
             }
 
+            if (typeof window.unlockBackgroundAudio === "function") {
+                void window.unlockBackgroundAudio();
+            }
+
             loaderEl.removeEventListener("click", onActivate);
             loaderEl.removeEventListener("keydown", onActivate);
             resolve();
@@ -218,10 +215,23 @@ function playInviteEnvelopeLoader() {
     });
 }
 
+function revealInvitationContent() {
+    window.dispatchEvent(new CustomEvent("reveal-sequence:start"));
+}
+
+function setupRsvpExitTransition() {
+    setupLinkExitTransition({
+        matchLink: (link) => pathEndsWith(link.getAttribute("href"), "/rsvp"),
+        getDelayMs: () => runRevealExitSequence({
+            fadeDurationMs: RSVP_EXIT_FADE_DURATION_MS
+        })
+    });
+}
+
 async function initInvitePage() {
     const invitationRoot = document.getElementById("invitation-root");
 
-    const data = getInvitationData();
+    const data = await getInvitationData();
     renderInvitationData(data);
     startCountdown(data.eventDate);
     createSnowParticles();
@@ -232,9 +242,14 @@ async function initInvitePage() {
         invitationRoot.classList.remove("opacity-0");
         invitationRoot.classList.add("opacity-100");
     }
+
+    window.requestAnimationFrame(() => {
+        revealInvitationContent();
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     lockInitialViewportHeight();
+    setupRsvpExitTransition();
     void initInvitePage();
 });

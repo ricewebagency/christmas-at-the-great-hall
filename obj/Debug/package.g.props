@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project>
   <PropertyGroup>
-    <PackageJsonName Condition="$(PackageJsonName) == ''">lumazon</PackageJsonName>
+    <PackageJsonName Condition="$(PackageJsonName) == ''">The Magical Winter Banquet</PackageJsonName>
     <PackageJsonVersion Condition="$(PackageJsonVersion) == ''">1.0.0</PackageJsonVersion>
     <PackageJsonMain Condition="$(PackageJsonMain) == ''">index.js</PackageJsonMain>
     <PackageJsonScriptsBuild Condition="$(PackageJsonScriptsBuild) == ''">node ./scripts/build.mjs</PackageJsonScriptsBuild>

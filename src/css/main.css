@@ -12,7 +12,102 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes revealFade {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+@keyframes burntPaperFadeOut {
+	0% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
+@keyframes fadeInOverlay {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+@keyframes backgroundZoom {
+	0% {
+		transform: scale(1.05);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
 @layer utilities {
+	.burnt-paper-fade-out {
+		opacity: 1;
+		animation: burntPaperFadeOut 1.3s ease-in forwards;
+		animation-delay: 2000ms;
+		will-change: opacity;
+	}
+}
+
+@layer components {
+	.rsvp-checkbox {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 1rem;
+		height: 1rem;
+		margin: 0;
+		border: 1px solid rgba(43, 43, 43, 0.6);
+		border-radius: 0.125rem;
+		background: transparent;
+		background-color: transparent;
+		box-shadow: none;
+		cursor: pointer;
+		position: relative;
+		flex-shrink: 0;
+	}
+
+	.rsvp-checkbox:checked {
+		background: transparent;
+		border-color: rgba(43, 43, 43, 0.9);
+	}
+
+	.rsvp-checkbox:checked::after {
+		content: "";
+		position: absolute;
+		left: 3px;
+		top: 0px;
+		width: 5px;
+		height: 9px;
+		border: solid rgba(43, 43, 43, 0.95);
+		border-width: 0 2px 2px 0;
+		transform: rotate(45deg);
+	}
+
+	.rsvp-checkbox:focus,
+	.rsvp-checkbox:focus-visible {
+		outline: none;
+		box-shadow: none;
+	}
+}
+
+@layer utilities {
+	[data-reveal] {
+		opacity: 0;
+	}
+
+	[data-reveal].is-ready {
+		animation: revealFade 0.8s ease-out forwards;
+		animation-delay: var(--reveal-delay, 0s);
+	}
+
 	.font-inter {
 		text-rendering: optimizeLegibility;
 		font-synthesis: none;

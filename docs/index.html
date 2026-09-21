@@ -1,7 +1,45 @@
 ﻿<!doctype html>
 <html lang="nl">
 
+<head>
+    <base href="./">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Magical Winter Banquet</title>
+    <script type="module">
+        import { getInvitationData } from './js/api-client.js';
+
+        const redirectToInvite = () => {
+            window.location.replace('./invite/');
+        };
+
+        const redirectTo404 = () => {
+            window.location.replace('./404.html');
+        };
+
+        async function redirectFromHome() {
+            try {
+                const user = await getInvitationData();
+
+                if (user && user.guestName) {
+                    redirectToInvite();
+                } else {
+                    redirectTo404();
+                }
+            } catch (error) {
+                redirectTo404();
+            }
+        }
+
+        void redirectFromHome();
+    </script>
+    <script src="./js/background-audio.js" defer></script>
+</head>
+
 <body data-asset-base-path="./">
+    <audio id="background-audio" preload="auto" loop autoplay muted>
+        <source src="./assets/music/diagon_alley.mp3.mpeg" type="audio/mpeg">
+    </audio>
 </body>
 
 </html>
