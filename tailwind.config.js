@@ -1,0 +1,194 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ["./src/**/*.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        primary: "#ffffff",
+        accent: "#C6A45A",
+        surface: "#F4F4F2",
+        muted: "#D6D6D6",
+        charcoal: "#2B2B2B",
+        wood: "#A6855E",
+      },
+      fontFamily: {
+        display: ['"Bebas Neue"', "sans-serif"],
+        sans: ['"Montserrat"', "sans-serif"],
+        inter: ['"Inter"', "sans-serif"],
+        geist: ['"Geist"', "sans-serif"],
+        inkpot: ['"Inkpot"', "serif"],
+        'instrument-serif': ['"Instrument Serif"', '"Instrument Serif Placeholder"', "serif"],
+        montserrat: ['"Montserrat"', "sans-serif"],
+        playfair: ['"Playfair Display"', "Georgia", '"Times New Roman"', "serif"],
+        baskervville: ['"Baskervville"', "serif"],
+        almarai: ['"Almarai"', "sans-serif"],
+        georama: ['"Georama"', "sans-serif"],
+      },
+      keyframes: {
+        fadeInUp: {
+          "0%": { opacity: "0", transform: "translate3d(0, 12px, 0)" },
+          "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
+        },
+        fadeInDown: {
+          "0%": { opacity: "0", transform: "translate3d(0, -8px, 0)" },
+          "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
+        },
+        marquee: {
+          from: { transform: "translateX(0%)" },
+          to: { transform: "translateX(-50%)" },
+        },
+        spinSlow: {
+          from: { transform: "rotate(0deg)" },
+          to: { transform: "rotate(360deg)" },
+        },
+        loadingFadeOut: {
+          "0%": { opacity: "1" },
+          "100%": { opacity: "0" },
+        },
+        logoSwapA: {
+          "0%": { transform: "translateX(0)" },
+          "18.75%": { transform: "translateX(0)" },
+          "24.75%": { transform: "translateX(-110%)" },
+          "31%": { transform: "translateX(-110%)" },
+          "37%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        logoSwapB: {
+          "0%": { transform: "translateX(110%)" },
+          "18.75%": { transform: "translateX(110%)" },
+          "24.75%": { transform: "translateX(0)" },
+          "31%": { transform: "translateX(0)" },
+          "37%": { transform: "translateX(110%)" },
+          "100%": { transform: "translateX(110%)" },
+        },
+        logoEdgeLeft: {
+          "0%": { opacity: "0" },
+          "18.75%": { opacity: "0" },
+          "21.75%": { opacity: "1" },
+          "26.75%": { opacity: "0" },
+          "100%": { opacity: "0" },
+        },
+        logoEdgeRight: {
+          "0%": { opacity: "0" },
+          "31%": { opacity: "0" },
+          "33.5%": { opacity: "1" },
+          "38.5%": { opacity: "0" },
+          "100%": { opacity: "0" },
+        },
+        logoMask: {
+          "0%": {
+            maskImage: "none",
+            WebkitMaskImage: "none",
+            maskSize: "100% 100%",
+            WebkitMaskSize: "100% 100%",
+            maskPosition: "center",
+            WebkitMaskPosition: "center",
+          },
+          "18.75%": {
+            maskImage: "none",
+            WebkitMaskImage: "none",
+            maskSize: "100% 100%",
+            WebkitMaskSize: "100% 100%",
+            maskPosition: "center",
+            WebkitMaskPosition: "center",
+          },
+          "21.75%": {
+            maskImage:
+              "linear-gradient(to right, transparent, black 18%, black 82%, transparent)",
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent, black 18%, black 82%, transparent)",
+            maskSize: "100% 100%",
+            WebkitMaskSize: "100% 100%",
+            maskPosition: "center",
+            WebkitMaskPosition: "center",
+          },
+          "25.75%": {
+            maskImage:
+              "linear-gradient(to right, transparent, black 18%, black 82%, transparent)",
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent, black 18%, black 82%, transparent)",
+            maskSize: "130% 100%",
+            WebkitMaskSize: "130% 100%",
+            maskPosition: "center",
+            WebkitMaskPosition: "center",
+          },
+          "26.75%": {
+            maskImage: "none",
+            WebkitMaskImage: "none",
+            maskSize: "150% 100%",
+            WebkitMaskSize: "150% 100%",
+            maskPosition: "center",
+            WebkitMaskPosition: "center",
+          },
+          "31%": {
+            maskImage: "none",
+            WebkitMaskImage: "none",
+            maskSize: "100% 100%",
+            WebkitMaskSize: "100% 100%",
+            maskPosition: "center",
+            WebkitMaskPosition: "center",
+          },
+          "33.5%": {
+            maskImage:
+              "linear-gradient(to right, transparent, black 18%, black 82%, transparent)",
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent, black 18%, black 82%, transparent)",
+            maskSize: "100% 100%",
+            WebkitMaskSize: "100% 100%",
+            maskPosition: "center",
+            WebkitMaskPosition: "center",
+          },
+          "37.5%": {
+            maskImage:
+              "linear-gradient(to right, transparent, black 18%, black 82%, transparent)",
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent, black 18%, black 82%, transparent)",
+            maskSize: "130% 100%",
+            WebkitMaskSize: "130% 100%",
+            maskPosition: "center",
+            WebkitMaskPosition: "center",
+          },
+          "38.5%": {
+            maskImage: "none",
+            WebkitMaskImage: "none",
+            maskSize: "150% 100%",
+            WebkitMaskSize: "150% 100%",
+            maskPosition: "center",
+            WebkitMaskPosition: "center",
+          },
+          "100%": {
+            maskImage: "none",
+            WebkitMaskImage: "none",
+            maskSize: "100% 100%",
+            WebkitMaskSize: "100% 100%",
+            maskPosition: "center",
+            WebkitMaskPosition: "center",
+          },
+        },
+      },
+      animation: {
+        fadeInUp: "fadeInUp 0.9s ease-out both",
+        fadeInUp200: "fadeInUp 0.9s ease-out 0.2s both",
+        fadeInUp400: "fadeInUp 0.9s ease-out 0.4s both",
+        fadeInUp600: "fadeInUp 0.9s ease-out 0.6s both",
+        fadeInUp700: "fadeInUp 0.9s ease-out 0.7s both",
+        fadeInUp800: "fadeInUp 0.9s ease-out 0.8s both",
+        fadeInUp900: "fadeInUp 0.9s ease-out 0.9s both",
+        fadeInUp1100: "fadeInUp 0.9s ease-out 0.9s both",
+        fadeInDown: "fadeInDown 0.6s ease-out both",
+        marquee: "marquee 30s linear infinite",
+        spinSlow: "spinSlow 60s linear infinite",
+        loadingFadeOut: "loadingFadeOut 0.4s ease-out 0.5s forwards",
+        logoSwapA: "logoSwapA 16s ease-in-out infinite",
+        logoSwapB: "logoSwapB 16s ease-in-out infinite",
+        logoEdgeLeft: "logoEdgeLeft 16s ease-in-out infinite",
+        logoEdgeRight: "logoEdgeRight 16s ease-in-out infinite",
+        logoMask: "logoMask 16s ease-in-out infinite",
+      },
+      boxShadow: {
+        '3xl': '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+      },
+    },
+  },
+  plugins: [],
+};

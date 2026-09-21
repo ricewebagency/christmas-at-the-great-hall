@@ -1,0 +1,35 @@
+{
+  "name": "lumazon",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "node ./scripts/build.mjs",
+    "dev": "node ./scripts/dev.mjs",
+    "update-reviews": "node ./scripts/update-reviews.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "autoprefixer": "^10.4.22",
+    "chokidar": "^5.0.0",
+    "postcss": "^8.5.6",
+    "postcss-import": "^16.1.1",
+    "tailwindcss": "^3.4.19"
+  },
+  "dependencies": {
+    "browserslist": "^4.28.1",
+    "electron-to-chromium": "^1.5.267",
+    "escalade": "^3.2.0",
+    "fraction.js": "^5.3.4",
+    "glob": "^13.0.0",
+    "nanoid": "^3.3.11",
+    "node-releases": "^2.0.27",
+    "normalize-range": "^0.1.2",
+    "picocolors": "^1.1.1",
+    "postcss-value-parser": "^4.2.0",
+    "source-map-js": "^1.2.1",
+    "update-browserslist-db": "^1.2.2"
+  },
+  "description": ""
+}

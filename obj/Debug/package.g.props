@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <PackageJsonName Condition="$(PackageJsonName) == ''">lumazon</PackageJsonName>
+    <PackageJsonVersion Condition="$(PackageJsonVersion) == ''">1.0.0</PackageJsonVersion>
+    <PackageJsonMain Condition="$(PackageJsonMain) == ''">index.js</PackageJsonMain>
+    <PackageJsonScriptsBuild Condition="$(PackageJsonScriptsBuild) == ''">node ./scripts/build.mjs</PackageJsonScriptsBuild>
+    <PackageJsonScriptsDev Condition="$(PackageJsonScriptsDev) == ''">node ./scripts/dev.mjs</PackageJsonScriptsDev>
+    <PackageJsonScriptsUpdateReviews Condition="$(PackageJsonScriptsUpdateReviews) == ''">node ./scripts/update-reviews.mjs</PackageJsonScriptsUpdateReviews>
+    <PackageJsonKeywords Condition="$(PackageJsonKeywords) == ''">[]</PackageJsonKeywords>
+    <PackageJsonAuthor Condition="$(PackageJsonAuthor) == ''"></PackageJsonAuthor>
+    <PackageJsonLicense Condition="$(PackageJsonLicense) == ''">ISC</PackageJsonLicense>
+    <PackageJsonDevdependenciesAutoprefixer Condition="$(PackageJsonDevdependenciesAutoprefixer) == ''">^10.4.22</PackageJsonDevdependenciesAutoprefixer>
+    <PackageJsonDevdependenciesChokidar Condition="$(PackageJsonDevdependenciesChokidar) == ''">^5.0.0</PackageJsonDevdependenciesChokidar>
+    <PackageJsonDevdependenciesPostcss Condition="$(PackageJsonDevdependenciesPostcss) == ''">^8.5.6</PackageJsonDevdependenciesPostcss>
+    <PackageJsonDevdependenciesPostcssImport Condition="$(PackageJsonDevdependenciesPostcssImport) == ''">^16.1.1</PackageJsonDevdependenciesPostcssImport>
+    <PackageJsonDevdependenciesTailwindcss Condition="$(PackageJsonDevdependenciesTailwindcss) == ''">^3.4.19</PackageJsonDevdependenciesTailwindcss>
+    <PackageJsonDependenciesBrowserslist Condition="$(PackageJsonDependenciesBrowserslist) == ''">^4.28.1</PackageJsonDependenciesBrowserslist>
+    <PackageJsonDependenciesElectronToChromium Condition="$(PackageJsonDependenciesElectronToChromium) == ''">^1.5.267</PackageJsonDependenciesElectronToChromium>
+    <PackageJsonDependenciesEscalade Condition="$(PackageJsonDependenciesEscalade) == ''">^3.2.0</PackageJsonDependenciesEscalade>
+    <PackageJsonDependenciesFractionJs Condition="$(PackageJsonDependenciesFractionJs) == ''">^5.3.4</PackageJsonDependenciesFractionJs>
+    <PackageJsonDependenciesGlob Condition="$(PackageJsonDependenciesGlob) == ''">^13.0.0</PackageJsonDependenciesGlob>
+    <PackageJsonDependenciesNanoid Condition="$(PackageJsonDependenciesNanoid) == ''">^3.3.11</PackageJsonDependenciesNanoid>
+    <PackageJsonDependenciesNodeReleases Condition="$(PackageJsonDependenciesNodeReleases) == ''">^2.0.27</PackageJsonDependenciesNodeReleases>
+    <PackageJsonDependenciesNormalizeRange Condition="$(PackageJsonDependenciesNormalizeRange) == ''">^0.1.2</PackageJsonDependenciesNormalizeRange>
+    <PackageJsonDependenciesPicocolors Condition="$(PackageJsonDependenciesPicocolors) == ''">^1.1.1</PackageJsonDependenciesPicocolors>
+    <PackageJsonDependenciesPostcssValueParser Condition="$(PackageJsonDependenciesPostcssValueParser) == ''">^4.2.0</PackageJsonDependenciesPostcssValueParser>
+    <PackageJsonDependenciesSourceMapJs Condition="$(PackageJsonDependenciesSourceMapJs) == ''">^1.2.1</PackageJsonDependenciesSourceMapJs>
+    <PackageJsonDependenciesUpdateBrowserslistDb Condition="$(PackageJsonDependenciesUpdateBrowserslistDb) == ''">^1.2.2</PackageJsonDependenciesUpdateBrowserslistDb>
+    <PackageJsonDescription Condition="$(PackageJsonDescription) == ''"></PackageJsonDescription>
+  </PropertyGroup>
+</Project>

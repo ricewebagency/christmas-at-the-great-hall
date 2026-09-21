@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Magical Winter Banquet | Invitation</title>
+    <link rel="icon" href="./favicon.ico">
+    <link rel="stylesheet" href="./css/main.css">
+    <script src="./js/invite.js" defer></script>
+    <script src="./js/smooth-scroll.js" defer></script>
+</head>
+
+<body class="min-h-screen overflow-x-hidden bg-neutral-950 font-serif text-amber-50 antialiased">
+    <div aria-hidden="true"
+        class="pointer-events-none fixed inset-0 z-0 bg-[url('../assets/images/burnt-paper.png')] bg-cover bg-center bg-no-repeat opacity-100">
+    </div>
+
+    <div id="invite-loader" role="button" tabindex="0" aria-label="Open invitation"
+        class="fixed inset-0 z-50 overflow-hidden bg-[radial-gradient(circle_at_50%_30%,rgba(56,24,18,0.78),rgba(6,4,4,0.96)_72%)] transition-opacity duration-500 ease-out motion-reduce:transition-none">
+        <div class="relative h-screen w-screen">
+            <img id="invite-envelope-bottom" src="./assets/images/envelope-bottom.png" alt=""
+                class="h-full w-full select-none object-cover object-center transition-opacity duration-700 ease-out motion-reduce:transition-none">
+            <div id="invite-hinge-shadow" aria-hidden="true"
+                class="pointer-events-none absolute inset-x-0 top-0 h-[40vh] bg-gradient-to-b from-black/65 via-black/25 to-transparent opacity-0 transition-opacity duration-[2000ms] ease-out motion-reduce:transition-none">
+            </div>
+            <img id="invite-envelope-top" src="./assets/images/envelope-top.png" alt=""
+                class="pointer-events-none absolute inset-0 h-full w-full select-none object-cover object-top [transform-origin:50%_0%] [transform:perspective(1600px)_translate3d(0,0,0)_rotateX(0deg)] [filter:drop-shadow(0_8px_8px_rgba(0,0,0,0.08))] will-change-transform transition-[transform,filter] duration-[4200ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none">
+        </div>
+    </div>
+
+    <main class="relative z-10 flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
+        <section id="invitation-root"
+            class="relative z-10 w-full flex flex-col gap-8 max-w-xl p-5 text-charcoal opacity-0 transition duration-700 ease-out motion-reduce:transform-none motion-reduce:transition-none sm:p-8 font-inkpot">
+            <header class="text-center">
+
+                <p class="text-lg italic tracking-[0.05em] text-charcoal/80">Guest Invitation</p>
+
+                <div aria-hidden="true"
+                    class="my-6 h-px bg-gradient-to-r from-transparent via-charcoal/40 to-transparent">
+                </div>
+
+                <p class="mt-8 text-xl italic text-charcoal sm:text-2xl">Dear <span id="guest-name">Guest</span>,</p>
+                <p class="mt-4 text-[0.7rem] uppercase tracking-[0.24em] text-charcoal/75">Your attendance is requested
+                </p>
+                <h1 class="mt-3 text-3xl leading-tight text-charcoal sm:text-5xl">THE MAGICAL WINTER BANQUET</h1>
+                <p class="mt-3 text-base text-charcoal/85 sm:text-lg">A Christmas feast of magic, mystery &amp;
+                    mischief</p>
+
+                <div
+                    class="mt-8 space-y-5 text-left text-sm leading-relaxed tracking-wide text-charcoal/90 sm:text-base">
+                    <p>
+                        You are hereby summoned to the most curious gathering of the season — the <span
+                            class="font-semibold text-charcoal">Magical Winter Banquet</span>, where candlelight glows
+                        like a secret and the air itself hums with magic.
+                    </p>
+                    <p>
+                        The invitation is personally written for <span id="guest-name-2"
+                            class="font-semibold text-charcoal">you</span>, and the night awaits your presence beneath
+                        the silver glow of winter's spell. You must announce your arrival by writing in this letter —
+                        sign your name, preferences, and let the ink carry your acceptance into the great hall
+                        before the feast begins.
+                    </p>
+                    <div class="pt-3 text-center">
+                        <button type="button"
+                            class="group inline-flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.24em] text-charcoal/80 transition-colors duration-200 hover:text-charcoal focus:outline-none focus-visible:outline-none">
+                            <span>Submit your attendance</span>
+                            <svg aria-hidden="true" viewBox="0 0 24 24"
+                                class="size-4 transition-transform duration-200 group-hover:translate-x-1">
+                                <path d="M5 12h12m0 0-4-4m4 4-4 4" fill="none" stroke="currentColor"
+                                    stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </header>
+        </section>
+    </main>
+</body>
+
+</html>

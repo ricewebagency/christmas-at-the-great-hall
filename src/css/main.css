@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap');
+
+@font-face {
+  font-family: 'Inkpot';
+  src: url('../assets/fonts/Inkpot.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+	.font-inter {
+		text-rendering: optimizeLegibility;
+		font-synthesis: none;
+		text-shadow: 0 0 0.7px rgba(255, 255, 255, 0.3);
+	}
+
+	/* Accent glow color is set via --btn-cta-accent on the element */
+	.btn-cta__glow {
+		background-color: var(--btn-cta-accent, #e29f21);
+	}
+
+	.font-instrument-serif {
+		text-rendering: optimizeLegibility;
+		font-synthesis: none;
+		text-shadow: 0 0 0.7px rgba(255, 255, 255, 0.24);
+	}
+
+	.hero-letter {
+		display: inline-block;
+		opacity: 0;
+		filter: blur(8px);
+		transform: translate3d(0, 8px, 0);
+		will-change: opacity, transform, filter;
+		animation: heroLetterReveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+		animation-delay: var(--animation-delay, 0s);
+	}
+
+	[data-animate-reveal-up],
+	[data-animate-reveal-down] {
+		opacity: 0;
+		filter: blur(8px);
+		will-change: opacity, transform, filter;
+		animation-duration: 1.2s;
+		animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+		animation-fill-mode: forwards;
+		animation-delay: var(--animate-delay, 0.8s);
+	}
+
+	[data-animate-reveal-up][data-animate-pending],
+	[data-animate-reveal-down][data-animate-pending] {
+		animation: none;
+	}
+
+	[data-animate-reveal-up] {
+		animation-name: paragraphRevealUp;
+	}
+
+	[data-animate-reveal-up][data-animate-no-blur] {
+		opacity: 0;
+		filter: none;
+		transform: translate3d(0, 14px, 0);
+		animation: none;
+		transition-property: opacity, transform;
+		transition-duration: 1.2s;
+		transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	[data-animate-reveal-up][data-animate-no-blur].is-revealed {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+	}
+
+	[data-animate-reveal-down] {
+		animation-name: paragraphRevealDown;
+	}
+
+	[data-animate-reveal-down][data-animate-no-blur] {
+		opacity: 0;
+		filter: none;
+		transform: translate3d(0, -14px, 0);
+		animation: none;
+		transition-property: opacity, transform;
+		transition-duration: 1.2s;
+		transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	[data-animate-reveal-down][data-animate-no-blur].is-revealed {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+	}
+
+	.hero-hill {
+		transform-origin: center bottom;
+		will-change: transform;
+		transition: transform 0.2s ease-out;
+	}
+}
+
+@keyframes heroLetterReveal {
+	0% {
+		opacity: 0;
+		filter: blur(8px);
+		transform: translate3d(0, 8px, 0);
+	}
+	100% {
+		opacity: 1;
+		filter: blur(0);
+		transform: translate3d(0, 0, 0);
+	}
+}
+
+@keyframes paragraphRevealUp {
+	0% {
+		opacity: 0;
+		filter: blur(8px);
+		transform: translate3d(0, 14px, 0);
+	}
+	100% {
+		opacity: 1;
+		filter: blur(0);
+		transform: translate3d(0, 0, 0);
+	}
+}
+
+@keyframes paragraphRevealDown {
+	0% {
+		opacity: 0;
+		filter: blur(8px);
+		transform: translate3d(0, -14px, 0);
+	}
+	100% {
+		opacity: 1;
+		filter: blur(0);
+		transform: translate3d(0, 0, 0);
+	}
+}
+
