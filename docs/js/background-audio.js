@@ -16,13 +16,12 @@ function unlockBackgroundAudio() {
 
 const SORTING_HAT_IMAGE_SOURCES = [
     './assets/images/sorting-hat-talking-1.png',
-    './assets/images/sorting-hat-talking-2.png',
     './assets/images/sorting-hat-talking-3.png',
     './assets/images/sorting-hat-talking-5.png',
     './assets/images/sorting-hat-talking-6.png',
     './assets/images/sorting-hat-talking-7.png'
 ];
-const SORTING_HAT_AUDIO_DELAY_MS = 2000;
+const SORTING_HAT_AUDIO_DELAY_MS = 1;
 const SORTING_HAT_IMAGE_CYCLE_MIN_MS = 1000;
 const SORTING_HAT_IMAGE_CYCLE_MAX_MS = 3500;
 const SORTING_HAT_IMAGE_CYCLE_DURATION_MS = 12000;
