@@ -27,6 +27,11 @@ const ENVELOPE_TOP_FILTERS = {
     opened: "drop-shadow(0 46px 40px rgba(0, 0, 0, 0.5))"
 };
 
+function lockInitialViewportHeight() {
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    document.documentElement.style.setProperty("--locked-vh", `${viewportHeight}px`);
+}
+
 function getInvitationData() {
     // Placeholder for future API call (Azure Function). Keep return shape stable.
     return invitation;
@@ -230,5 +235,6 @@ async function initInvitePage() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    lockInitialViewportHeight();
     void initInvitePage();
 });

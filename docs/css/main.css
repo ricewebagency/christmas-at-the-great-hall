@@ -672,12 +672,24 @@ video {
   height: 100vh;
 }
 
+.h-\[calc\(var\(--locked-vh\)\*0\.4\)\]{
+  height: calc(var(--locked-vh) * 0.4);
+}
+
+.h-\[var\(--locked-vh\)\]{
+  height: var(--locked-vh);
+}
+
 .min-h-12{
   min-height: 3rem;
 }
 
 .min-h-screen{
   min-height: 100vh;
+}
+
+.min-h-\[var\(--locked-vh\)\]{
+  min-height: var(--locked-vh);
 }
 
 .w-4{
