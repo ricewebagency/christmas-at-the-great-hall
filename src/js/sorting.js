@@ -43,6 +43,7 @@ const QUESTION_TRANSITION_MS = 720;
 const SORTING_UI_DELAY_MS = 240;
 const SORTING_UI_STAGGER_MS = 90;
 const INITIAL_SORTING_UI_DELAY_MS = 1200;
+const SORTING_HAT_SUBTITLE_FADE_MS = 300;
 const AUDIO_PLAY_COOLDOWN_MS = 1000;
 const SORTING_HAT_IMAGE_PULSE_MIN_MS = 100;
 const SORTING_HAT_IMAGE_PULSE_MAX_MS = 400;
@@ -107,6 +108,11 @@ function cancelSortingHatSubtitleSentencePlayback() {
     }
 }
 
+function setSortingHatSubtitleVisibility(subtitleEl, isVisible) {
+    subtitleEl.classList.toggle('opacity-0', !isVisible);
+    subtitleEl.classList.toggle('opacity-70', isVisible);
+}
+
 function showSortingHatSubtitleSentence(subtitleEl, sentences, sentenceIndex, playbackToken) {
     if (playbackToken !== sortingHatSubtitlePlaybackToken) {
         return;
@@ -120,14 +126,34 @@ function showSortingHatSubtitleSentence(subtitleEl, sentences, sentenceIndex, pl
     }
 
     subtitleEl.textContent = sentence.text;
+    const isFirstSentence = sentenceIndex === 0;
+    const isLastSentence = sentenceIndex >= sentences.length - 1;
 
-    if (sentenceIndex >= sentences.length - 1) {
-        sortingHatSubtitleSentenceTimeoutId = null;
-        return;
+    if (isFirstSentence) {
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+                setSortingHatSubtitleVisibility(subtitleEl, true);
+            });
+        });
+    } else {
+        setSortingHatSubtitleVisibility(subtitleEl, true);
     }
 
     sortingHatSubtitleSentenceTimeoutId = window.setTimeout(() => {
-        showSortingHatSubtitleSentence(subtitleEl, sentences, sentenceIndex + 1, playbackToken);
+        if (playbackToken !== sortingHatSubtitlePlaybackToken) {
+            return;
+        }
+
+        if (!isLastSentence) {
+            showSortingHatSubtitleSentence(subtitleEl, sentences, sentenceIndex + 1, playbackToken);
+            return;
+        }
+
+        setSortingHatSubtitleVisibility(subtitleEl, false);
+
+        window.setTimeout(() => {
+            sortingHatSubtitleSentenceTimeoutId = null;
+        }, SORTING_HAT_SUBTITLE_FADE_MS);
     }, sentence.durationMs);
 }
 
@@ -161,24 +187,27 @@ async function showSortingHatSubtitleForSource(source) {
     cancelSortingHatSubtitleSentencePlayback();
 
     activeSortingHatSubtitleSource = sourceName;
-    subtitleEl.classList.remove('opacity-70');
-    subtitleEl.classList.add('opacity-0');
-    subtitleEl.textContent = subtitleSentences[0]?.text ?? '';
+    const playbackToken = sortingHatSubtitlePlaybackToken;
+    const startSubtitleSequence = () => {
+        showSortingHatSubtitleSentence(subtitleEl, subtitleSentences, 0, playbackToken);
+    };
 
-    window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-            subtitleEl.classList.remove('opacity-0');
-            subtitleEl.classList.add('opacity-70');
-        });
-    });
+    if (subtitleEl.textContent !== '' && !subtitleEl.classList.contains('opacity-0')) {
+        subtitleEl.classList.remove('opacity-70');
+        subtitleEl.classList.add('opacity-0');
 
-    if (subtitleSentences.length > 1) {
-        const playbackToken = sortingHatSubtitlePlaybackToken;
+        window.setTimeout(() => {
+            if (playbackToken !== sortingHatSubtitlePlaybackToken) {
+                return;
+            }
 
-        sortingHatSubtitleSentenceTimeoutId = window.setTimeout(() => {
-            showSortingHatSubtitleSentence(subtitleEl, subtitleSentences, 1, playbackToken);
-        }, subtitleSentences[0]?.durationMs ?? 0);
+            startSubtitleSequence();
+        }, SORTING_HAT_SUBTITLE_FADE_MS);
+
+        return;
     }
+
+    startSubtitleSequence();
 }
 
 function clearSortingHatSubtitleForSource(source = null) {
@@ -281,12 +310,16 @@ function createAnswerCarousel(answers, onSubmitAnswer) {
     const prevButton = document.createElement('button');
     prevButton.type = 'button';
     prevButton.className = 'pointer-events-auto inline-flex h-9 w-9 items-center justify-center text-amber-100/90 transition-colors duration-200 hover:text-amber-50 disabled:cursor-not-allowed disabled:opacity-35';
+    prevButton.style.position = 'relative';
+    prevButton.style.right = '12px';
     prevButton.setAttribute('aria-label', 'Previous answer');
     prevButton.appendChild(createChevronIcon('left'));
 
     const nextButton = document.createElement('button');
     nextButton.type = 'button';
     nextButton.className = 'pointer-events-auto inline-flex h-9 w-9 items-center justify-center text-amber-100/90 transition-colors duration-200 hover:text-amber-50 disabled:cursor-not-allowed disabled:opacity-35';
+    nextButton.style.position = 'relative';
+    nextButton.style.left = '12px';
     nextButton.setAttribute('aria-label', 'Next answer');
     nextButton.appendChild(createChevronIcon('right'));
 
@@ -621,6 +654,7 @@ function initSortingQuiz() {
     let houseRevealAudio = null;
     let houseRevealLocked = false;
     let houseRevealHatImagePulseTimer = null;
+    let houseRevealFinalizationTimer = null;
 
     function startSortingFlow() {
         if (hasStarted) {
@@ -665,6 +699,32 @@ function initSortingQuiz() {
             });
     }
 
+    function showAudioGate() {
+        audioGateEl.classList.remove('hidden');
+        audioGateEl.classList.add('flex');
+    }
+
+    function attemptAutoStartSortingFlow() {
+        if (window.audioIsEnabled) {
+            startSortingFlow();
+            return;
+        }
+
+        if (typeof window.unlockBackgroundAudio !== 'function') {
+            showAudioGate();
+            return;
+        }
+
+        void window.unlockBackgroundAudio().then((didUnlock) => {
+            if (didUnlock) {
+                startSortingFlow();
+                return;
+            }
+
+            showAudioGate();
+        });
+    }
+
     function setQuizPromptVisibility(isVisible) {
         const method = isVisible ? 'remove' : 'add';
 
@@ -699,6 +759,13 @@ function initSortingQuiz() {
         }
     }
 
+    function stopHouseRevealFinalizationTimer() {
+        if (houseRevealFinalizationTimer !== null) {
+            window.clearTimeout(houseRevealFinalizationTimer);
+            houseRevealFinalizationTimer = null;
+        }
+    }
+
     function triggerSortingHatImagePulse(
         durationMs = 2000,
         minDelayMs = SORTING_HAT_IMAGE_PULSE_MIN_MS,
@@ -727,6 +794,36 @@ function initSortingQuiz() {
         tick();
     }
 
+    function clearHouseResultBackdrop() {
+        const houseBackdropEl = document.getElementById('sorting-backdrop-house');
+
+        if (!(houseBackdropEl instanceof HTMLElement)) {
+            return;
+        }
+
+        houseBackdropEl.classList.remove('opacity-100');
+        houseBackdropEl.classList.add('opacity-0');
+        houseBackdropEl.style.backgroundImage = 'none';
+    }
+
+    function setHouseResultBackdrop(house) {
+        const houseBackdropEl = document.getElementById('sorting-backdrop-house');
+
+        if (!(houseBackdropEl instanceof HTMLElement)) {
+            return;
+        }
+
+        const houseBackgroundSource = `./assets/images/the-great-hall-${house}.png`;
+        houseBackdropEl.style.backgroundImage = `url("${houseBackgroundSource}")`;
+        houseBackdropEl.classList.remove('opacity-100');
+        houseBackdropEl.classList.add('opacity-0');
+
+        window.requestAnimationFrame(() => {
+            houseBackdropEl.classList.remove('opacity-0');
+            houseBackdropEl.classList.add('opacity-100');
+        });
+    }
+
     function resetHouseRevealState() {
         if (houseRevealAudio) {
             houseRevealAudio.pause();
@@ -734,6 +831,8 @@ function initSortingQuiz() {
         }
 
         stopHouseRevealHatImagePulse();
+        stopHouseRevealFinalizationTimer();
+        clearHouseResultBackdrop();
         houseRevealAudio = null;
         houseRevealLocked = false;
         pendingRevealHouse = null;
@@ -779,6 +878,7 @@ function initSortingQuiz() {
         const source = getRevealHouseAudio(house, 'second');
 
         triggerSortingHatImagePulse(HOUSE_REVEAL_SORTING_HAT_IMAGE_PULSE_DURATION_MS);
+        setHouseResultBackdrop(house);
 
         const finalizeReveal = () => {
             resultEl.style.animation = 'none';
@@ -802,7 +902,11 @@ function initSortingQuiz() {
             }
         };
 
-        finalizeReveal();
+        stopHouseRevealFinalizationTimer();
+        houseRevealFinalizationTimer = window.setTimeout(() => {
+            finalizeReveal();
+            houseRevealFinalizationTimer = null;
+        }, 650);
 
         if (!source) {
             return;
@@ -1063,6 +1167,7 @@ function initSortingQuiz() {
     });
 
     audioEnableButton.addEventListener('click', startSortingFlow);
+    attemptAutoStartSortingFlow();
 }
 
 document.addEventListener('DOMContentLoaded', initSortingQuiz);

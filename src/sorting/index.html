@@ -14,31 +14,35 @@
 </head>
 
 <body
-    class="audio-gate-visible relative min-h-screen touch-pan-y overscroll-x-none [overflow-x:clip] overflow-y-hidden bg-neutral-950 font-serif text-amber-50 antialiased">
+    class="audio-gate-visible relative max-h-dvh touch-pan-y overscroll-x-none [overflow-x:clip] overflow-y-hidden bg-neutral-950 font-serif text-amber-50 antialiased">
     <audio id="background-audio" preload="auto" loop autoplay muted>
         <source src="./assets/music/platform-nine-and-three-quarters.mp3" type="audio/mp3">
     </audio>
 
     <div id="sorting-backdrop" aria-hidden="true"
-        class="burnt-paper-bg pointer-events-none fixed inset-0 z-0 origin-center bg-[url('../assets/images/the-great-hall.png')] bg-cover bg-center bg-no-repeat opacity-100 animate-[backgroundZoom_1.8s_ease-out_forwards]">
+        class="burnt-paper-bg pointer-events-none fixed inset-0 z-0 origin-center bg-[url('../assets/images/the-great-hall.png')] bg-cover bg-center bg-no-repeat opacity-100 transition-opacity duration-700 ease-out animate-[backgroundZoom_1.8s_ease-out_forwards]">
+    </div>
+    <div id="sorting-backdrop-house" aria-hidden="true"
+        class="burnt-paper-bg pointer-events-none fixed inset-0 z-[1] origin-center bg-cover bg-center bg-no-repeat opacity-0 transition-opacity duration-700 ease-out">
     </div>
     <div id="sorting-overlay" aria-hidden="true"
         class="pointer-events-none fixed inset-0 z-[1] bg-gradient-to-b from-transparent via-black/70 to-black opacity-0 animate-[fadeInOverlay_1.8s_ease-out_forwards]">
     </div>
 
-    <div id="audio-gate" class="fixed inset-0 z-30 flex items-center justify-center bg-black/70">
-        <button id="audio-enable-button" type="button" aria-label="Enable audio"
+    <div id="audio-gate" class="fixed inset-0 z-30 hidden items-center justify-center bg-black/70">
+        <button id="audio-enable-button" type="button" aria-label="Play and start"
             class="group inline-flex items-center justify-center border-0 bg-transparent p-0 text-amber-50 transition-transform duration-200 hover:scale-105 active:scale-95 focus:outline-none focus-visible:outline-none">
-            <svg aria-hidden="true" viewBox="0 0 24 24"
-                class="h-12 w-12 fill-current drop-shadow-[0_0_18px_rgba(251,191,36,0.4)] sm:h-14 sm:w-14">
-                <path
-                    d="M3 10.5v3h4l5 5V5.5l-5 5H3Zm12 1.5c0-1.8-1.1-3.3-2.5-4.1v8.2c1.4-.8 2.5-2.3 2.5-4.1Zm3-6.2v2.2A8.6 8.6 0 0 1 21 12a8.6 8.6 0 0 1-2.5 5.4V19.7A10.8 10.8 0 0 0 23 12a10.8 10.8 0 0 0-5-8.2Z" />
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                class="h-12 w-12 drop-shadow-[0_0_18px_rgba(251,191,36,0.4)] sm:h-14 sm:w-14">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 8.25v7.5L15.75 12l-5.25-3.75Z" />
             </svg>
         </button>
     </div>
 
     <main id="sorting-main"
-        class="relative z-10 hidden min-h-screen items-center justify-center overflow-x-hidden px-4 py-8 sm:px-6 sm:py-10">
+        class="relative z-10 hidden max-h-dvh items-center justify-center overflow-x-hidden px-4 py-8 sm:px-6 sm:py-10">
         <section
             class="relative z-10 w-full max-w-2xl overflow-x-hidden opacity-0 animate-[revealFade_0.8s_ease-out_forwards] [animation-delay:0.12s]">
             <div class="p-5 sm:p-8">
@@ -59,7 +63,7 @@
                     </div>
 
                     <div class="overflow-hidden">
-                        <h1 id="sorting-progress" class="hidden font-inkpot text-3xl text-amber-50 sm:text-4xl">Loading
+                        <h1 id="sorting-progress" class="hidden font-inkpot text-xl text-amber-50 sm:text-4xl">Loading
                             questions
                         </h1>
                     </div>
