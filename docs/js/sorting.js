@@ -3,6 +3,7 @@ import { sendSortingHouseResult } from './api-client.js';
 const STORAGE_KEY = 'magical-winter-banquet.sorting-hat';
 const HOUSE_ORDER = ['gryffindor', 'hufflepuff', 'ravenclaw', 'slytherin'];
 const QUESTIONS_URL = new URL('../assets/files/sorting-hat-questions.json', import.meta.url);
+const SORTING_HAT_SUBTITLES_URL = new URL('../assets/files/sorting-hat-subtitles.json', import.meta.url);
 const HOUSE_REVEAL_AUDIO = {
     gryffindor: {
         first: new URL('../assets/music/sorting-hat/gryffindor-1.mp3', import.meta.url).href,
@@ -22,6 +23,7 @@ const HOUSE_REVEAL_AUDIO = {
     }
 };
 const SORTING_HAT_FRAGMENT_SOURCES = [
+    new URL('../assets/music/sorting-hat/thats-an-interesting-pick.mp3', import.meta.url).href,
     new URL('../assets/music/sorting-hat/ah-i-see.mp3', import.meta.url).href,
     new URL('../assets/music/sorting-hat/alright-very-well.mp3', import.meta.url).href,
     new URL('../assets/music/sorting-hat/go-on-hurry-up.mp3', import.meta.url).href,
@@ -31,19 +33,170 @@ const SORTING_HAT_FRAGMENT_SOURCES = [
     new URL('../assets/music/sorting-hat/mmm-alrighty-then.mp3', import.meta.url).href,
     new URL('../assets/music/sorting-hat/mmm-okay.mp3', import.meta.url).href,
     new URL('../assets/music/sorting-hat/pick-your-next-one-wisely.mp3', import.meta.url).href,
-    new URL('../assets/music/sorting-hat/thats-an-interesting-pick.mp3', import.meta.url).href,
     new URL('../assets/music/sorting-hat/very-well-then.mp3', import.meta.url).href,
     new URL('../assets/music/sorting-hat/youre-almost-there.mp3', import.meta.url).href
 ];
+const FIRST_SORTING_HAT_FRAGMENT_SOURCE = SORTING_HAT_FRAGMENT_SOURCES[0];
+const LAST_SORTING_HAT_FRAGMENT_SOURCE = SORTING_HAT_FRAGMENT_SOURCES[SORTING_HAT_FRAGMENT_SOURCES.length - 1];
 const SORTING_HAT_FRAGMENT_HISTORY_LIMIT = 10;
-const QUESTION_TRANSITION_MS = 220;
-const BUTTON_STAGGER_MS = 60;
+const QUESTION_TRANSITION_MS = 720;
+const SORTING_UI_DELAY_MS = 240;
+const SORTING_UI_STAGGER_MS = 90;
+const INITIAL_SORTING_UI_DELAY_MS = 1200;
 const AUDIO_PLAY_COOLDOWN_MS = 1000;
+const SORTING_HAT_IMAGE_PULSE_MIN_MS = 100;
+const SORTING_HAT_IMAGE_PULSE_MAX_MS = 400;
+const ANSWER_SORTING_HAT_IMAGE_PULSE_MIN_MS = 300;
+const ANSWER_SORTING_HAT_IMAGE_PULSE_MAX_MS = 800;
+const HOUSE_REVEAL_SORTING_HAT_IMAGE_PULSE_DURATION_MS = 1500;
 let nextAllowedAudioPlayAt = 0;
 let pendingAudioStart = Promise.resolve();
+const sortingHatSubtitlesPromise = fetch(SORTING_HAT_SUBTITLES_URL)
+    .then(async (response) => {
+        if (!response.ok) {
+            throw new Error(`Failed to load sorting subtitles: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data === null || typeof data !== 'object') {
+            throw new Error('Sorting subtitles are missing.');
+        }
+
+        if (!Array.isArray(data)) {
+            throw new Error('Sorting subtitles are missing.');
+        }
+
+        return new Map(
+            data.flatMap((entry) => {
+                const fileName = typeof entry?.fileName === 'string' ? entry.fileName.trim() : '';
+                const sentences = Array.isArray(entry?.sentences)
+                    ? entry.sentences
+                        .map((sentence) => {
+                            const text = typeof sentence?.text === 'string' ? sentence.text.trim() : '';
+                            const durationMs = Number(sentence?.durationMs);
+
+                            if (!text || !Number.isFinite(durationMs) || durationMs < 0) {
+                                return null;
+                            }
+
+                            return { text, durationMs };
+                        })
+                        .filter(Boolean)
+                    : [];
+
+                if (!fileName || sentences.length === 0) {
+                    return [];
+                }
+
+                return [[fileName, sentences]];
+            })
+        );
+    })
+    .catch(() => new Map());
+let activeSortingHatSubtitleSource = '';
+let sortingHatSubtitleSentenceTimeoutId = null;
+let sortingHatSubtitlePlaybackToken = 0;
+
+function cancelSortingHatSubtitleSentencePlayback() {
+    sortingHatSubtitlePlaybackToken += 1;
+
+    if (sortingHatSubtitleSentenceTimeoutId !== null) {
+        window.clearTimeout(sortingHatSubtitleSentenceTimeoutId);
+        sortingHatSubtitleSentenceTimeoutId = null;
+    }
+}
+
+function showSortingHatSubtitleSentence(subtitleEl, sentences, sentenceIndex, playbackToken) {
+    if (playbackToken !== sortingHatSubtitlePlaybackToken) {
+        return;
+    }
+
+    const sentence = sentences[sentenceIndex];
+
+    if (!sentence) {
+        sortingHatSubtitleSentenceTimeoutId = null;
+        return;
+    }
+
+    subtitleEl.textContent = sentence.text;
+
+    if (sentenceIndex >= sentences.length - 1) {
+        sortingHatSubtitleSentenceTimeoutId = null;
+        return;
+    }
+
+    sortingHatSubtitleSentenceTimeoutId = window.setTimeout(() => {
+        showSortingHatSubtitleSentence(subtitleEl, sentences, sentenceIndex + 1, playbackToken);
+    }, sentence.durationMs);
+}
 
 function createEmptyScores() {
     return Object.fromEntries(HOUSE_ORDER.map((house) => [house, 0]));
+}
+
+function getAudioSourceName(source) {
+    try {
+        return new URL(source, window.location.href).pathname.split('/').pop() ?? '';
+    } catch {
+        return source.split('/').pop() ?? '';
+    }
+}
+
+async function showSortingHatSubtitleForSource(source) {
+    const subtitleMap = await sortingHatSubtitlesPromise;
+    const sourceName = getAudioSourceName(source);
+    const subtitleSentences = subtitleMap.get(sourceName);
+    const subtitleEl = document.getElementById('sorting-subtitles');
+
+    if (!(subtitleEl instanceof HTMLElement)) {
+        return;
+    }
+
+    if (!Array.isArray(subtitleSentences) || subtitleSentences.length === 0) {
+        clearSortingHatSubtitleForSource(source);
+        return;
+    }
+
+    cancelSortingHatSubtitleSentencePlayback();
+
+    activeSortingHatSubtitleSource = sourceName;
+    subtitleEl.classList.remove('opacity-70');
+    subtitleEl.classList.add('opacity-0');
+    subtitleEl.textContent = subtitleSentences[0]?.text ?? '';
+
+    window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+            subtitleEl.classList.remove('opacity-0');
+            subtitleEl.classList.add('opacity-70');
+        });
+    });
+
+    if (subtitleSentences.length > 1) {
+        const playbackToken = sortingHatSubtitlePlaybackToken;
+
+        sortingHatSubtitleSentenceTimeoutId = window.setTimeout(() => {
+            showSortingHatSubtitleSentence(subtitleEl, subtitleSentences, 1, playbackToken);
+        }, subtitleSentences[0]?.durationMs ?? 0);
+    }
+}
+
+function clearSortingHatSubtitleForSource(source = null) {
+    if (source !== null && activeSortingHatSubtitleSource !== getAudioSourceName(source)) {
+        return;
+    }
+
+    cancelSortingHatSubtitleSentencePlayback();
+    activeSortingHatSubtitleSource = '';
+
+    const subtitleEl = document.getElementById('sorting-subtitles');
+
+    if (!(subtitleEl instanceof HTMLElement)) {
+        return;
+    }
+
+    subtitleEl.classList.remove('opacity-70');
+    subtitleEl.classList.add('opacity-0');
 }
 
 function formatHouseName(house) {
@@ -63,40 +216,226 @@ function getWinningHouse(scores) {
     }, HOUSE_ORDER[0]);
 }
 
-function getAnswerGridClass(answerCount) {
-    if (answerCount <= 1) {
-        return 'grid gap-3';
-    }
-
-    if (answerCount === 2) {
-        return 'grid gap-3 sm:grid-cols-2';
-    }
-
-    return 'grid gap-3 sm:grid-cols-2';
-}
-
 function setEnterState(element) {
-    element.classList.add('opacity-0', 'translate-y-2');
-    element.classList.remove('opacity-100', 'translate-y-0');
+    element.classList.add('transition-all', 'duration-700', 'ease-out');
+    element.classList.add('opacity-0');
+    element.classList.remove('opacity-100');
 }
 
 function playEnterAnimation(elements) {
     window.requestAnimationFrame(() => {
         elements.forEach((element) => {
-            element.classList.remove('opacity-0', 'translate-y-2');
-            element.classList.add('opacity-100', 'translate-y-0');
+            element.classList.remove('opacity-0');
+            element.classList.add('opacity-100');
         });
     });
 }
 
-function playExitAnimation(questionEl, buttons) {
-    questionEl.classList.remove('opacity-100', 'translate-y-0');
-    questionEl.classList.add('opacity-0', 'translate-y-2');
-
-    buttons.forEach((button) => {
-        button.classList.remove('opacity-100', 'translate-y-0');
-        button.classList.add('opacity-0', 'translate-y-2');
+function playExitAnimation(elements) {
+    elements.forEach((element) => {
+        element.style.transitionDelay = '0ms';
+        element.classList.remove('opacity-100');
+        element.classList.add('opacity-0');
     });
+}
+
+function createAnswerCarousel(answers, onSubmitAnswer) {
+    let selectedAnswerIndex = 0;
+    let touchStartX = null;
+
+    const container = document.createElement('div');
+    container.className = 'flex h-full flex-col gap-y-3';
+
+    const viewport = document.createElement('div');
+    viewport.className = 'relative min-h-0 flex-1 overflow-hidden';
+    viewport.setAttribute('aria-live', 'polite');
+
+    const track = document.createElement('div');
+    track.className = 'flex h-full items-center transition-transform duration-300 ease-out';
+
+    const navRow = document.createElement('div');
+    navRow.className = 'flex items-center justify-center';
+
+    const dotRow = document.createElement('div');
+    dotRow.className = 'flex items-center justify-center gap-x-1.5';
+    dotRow.setAttribute('aria-label', 'Answer slides');
+
+    const createChevronIcon = (direction) => {
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.setAttribute('viewBox', '0 0 20 20');
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', 'currentColor');
+        icon.setAttribute('stroke-width', '1.8');
+        icon.setAttribute('stroke-linecap', 'round');
+        icon.setAttribute('stroke-linejoin', 'round');
+        icon.classList.add('h-5', 'w-5');
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', direction === 'left' ? 'M12.5 4.5L7 10l5.5 5.5' : 'M7.5 4.5L13 10l-5.5 5.5');
+        icon.appendChild(path);
+
+        return icon;
+    };
+
+    const prevButton = document.createElement('button');
+    prevButton.type = 'button';
+    prevButton.className = 'pointer-events-auto inline-flex h-9 w-9 items-center justify-center text-amber-100/90 transition-colors duration-200 hover:text-amber-50 disabled:cursor-not-allowed disabled:opacity-35';
+    prevButton.setAttribute('aria-label', 'Previous answer');
+    prevButton.appendChild(createChevronIcon('left'));
+
+    const nextButton = document.createElement('button');
+    nextButton.type = 'button';
+    nextButton.className = 'pointer-events-auto inline-flex h-9 w-9 items-center justify-center text-amber-100/90 transition-colors duration-200 hover:text-amber-50 disabled:cursor-not-allowed disabled:opacity-35';
+    nextButton.setAttribute('aria-label', 'Next answer');
+    nextButton.appendChild(createChevronIcon('right'));
+
+    const chooseButton = document.createElement('button');
+    chooseButton.type = 'button';
+    chooseButton.className = 'group flex w-full max-w-full box-border items-center justify-center gap-x-3 rounded-none px-4 py-3 text-left text-base font-inkpot text-amber-50 transition-colors duration-200 hover:text-amber-100 focus:outline-none focus-visible:outline-none sm:text-base';
+
+    const chooseButtonLabel = document.createElement('span');
+    chooseButtonLabel.textContent = 'Choose answer';
+
+    const chooseButtonArrow = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    chooseButtonArrow.setAttribute('aria-hidden', 'true');
+    chooseButtonArrow.setAttribute('viewBox', '0 0 24 24');
+    chooseButtonArrow.setAttribute('fill', 'currentColor');
+    chooseButtonArrow.classList.add(
+        'h-5',
+        'w-5',
+        'text-yellow-300',
+        'drop-shadow-[0_0_6px_rgba(253,224,71,0.55)]'
+    );
+
+    const lightningPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    lightningPath.setAttribute('d', 'M13 2L4 14h6l-1 8 9-12h-6l1-8z');
+    chooseButtonArrow.appendChild(lightningPath);
+    const chooseButtonArrowRight = chooseButtonArrow.cloneNode(true);
+
+    chooseButton.append(chooseButtonArrow, chooseButtonLabel, chooseButtonArrowRight);
+
+    const dots = answers.map((_, index) => {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = 'h-2 w-2 rounded-full border border-amber-100/70 bg-transparent transition-colors duration-200';
+        dot.setAttribute('aria-label', `Go to answer ${index + 1}`);
+        dot.addEventListener('click', () => {
+            selectedAnswerIndex = index;
+            updateCarouselUI();
+        });
+        dotRow.appendChild(dot);
+        return dot;
+    });
+
+    const updateCarouselUI = () => {
+        const offsetPercent = selectedAnswerIndex * 100;
+        track.style.transform = `translateX(-${offsetPercent}%)`;
+        prevButton.disabled = selectedAnswerIndex === 0;
+        nextButton.disabled = selectedAnswerIndex >= answers.length - 1;
+
+        dots.forEach((dot, index) => {
+            const isActive = index === selectedAnswerIndex;
+            dot.classList.toggle('bg-amber-100', isActive);
+            dot.classList.toggle('bg-transparent', !isActive);
+            dot.setAttribute('aria-current', isActive ? 'true' : 'false');
+        });
+    };
+
+    const goToPrevious = () => {
+        if (selectedAnswerIndex <= 0) {
+            return;
+        }
+
+        selectedAnswerIndex -= 1;
+        updateCarouselUI();
+    };
+
+    const goToNext = () => {
+        if (selectedAnswerIndex >= answers.length - 1) {
+            return;
+        }
+
+        selectedAnswerIndex += 1;
+        updateCarouselUI();
+    };
+
+    answers.forEach((answer, index) => {
+        const slide = document.createElement('button');
+        slide.type = 'button';
+        slide.className = 'group h-full w-full shrink-0 text-left';
+
+        const copy = document.createElement('div');
+        copy.className = 'flex h-full items-center justify-center py-4 px-2 text-center font-inkpot text-lg leading-relaxed text-amber-50/92 transition-colors duration-200 group-hover:text-amber-50 sm:px-8 sm:text-xl';
+        copy.textContent = answer.text;
+
+        slide.appendChild(copy);
+        slide.addEventListener('click', () => {
+            selectedAnswerIndex = index;
+            updateCarouselUI();
+        });
+
+        track.appendChild(slide);
+    });
+
+    prevButton.addEventListener('click', goToPrevious);
+
+    nextButton.addEventListener('click', goToNext);
+
+    viewport.addEventListener('touchstart', (event) => {
+        touchStartX = event.touches[0]?.clientX ?? null;
+    });
+
+    viewport.addEventListener('touchend', (event) => {
+        if (touchStartX === null) {
+            return;
+        }
+
+        const touchEndX = event.changedTouches[0]?.clientX;
+
+        if (typeof touchEndX !== 'number') {
+            touchStartX = null;
+            return;
+        }
+
+        const deltaX = touchEndX - touchStartX;
+        touchStartX = null;
+
+        if (Math.abs(deltaX) < 36) {
+            return;
+        }
+
+        if (deltaX < 0) {
+            goToNext();
+            return;
+        }
+
+        goToPrevious();
+    });
+
+    chooseButton.addEventListener('click', () => {
+        const selectedAnswer = answers[selectedAnswerIndex];
+
+        if (!selectedAnswer) {
+            return;
+        }
+
+        onSubmitAnswer(selectedAnswer);
+    });
+
+    const chevronOverlay = document.createElement('div');
+    chevronOverlay.className = 'pointer-events-none absolute inset-y-0 left-0 right-0 z-10 flex items-center justify-between px-1 sm:px-2';
+    chevronOverlay.append(prevButton, nextButton);
+
+    viewport.append(track, chevronOverlay);
+    navRow.append(dotRow);
+    container.append(viewport, navRow, chooseButton);
+    updateCarouselUI();
+
+    return {
+        container,
+        controls: [prevButton, nextButton, chooseButton]
+    };
 }
 
 function pickRandomQuestions(questions, count) {
@@ -116,10 +455,24 @@ function pickRandomQuestions(questions, count) {
 function getRandomSortingHatFragmentSource(recentSources) {
     const recentSourceSet = new Set(recentSources);
     const availableSources = SORTING_HAT_FRAGMENT_SOURCES.filter((source) => !recentSourceSet.has(source));
-    const pool = availableSources.length > 0 ? availableSources : SORTING_HAT_FRAGMENT_SOURCES;
-    const randomIndex = Math.floor(Math.random() * pool.length);
 
-    return pool[randomIndex];
+    if (recentSourceSet.size === 0) {
+        return FIRST_SORTING_HAT_FRAGMENT_SOURCE;
+    }
+
+    if (availableSources.length === 0) {
+        return LAST_SORTING_HAT_FRAGMENT_SOURCE;
+    }
+
+    if (availableSources.length === 1) {
+        return availableSources[0];
+    }
+
+    const pool = availableSources.filter((source) => source !== LAST_SORTING_HAT_FRAGMENT_SOURCE);
+    const finalPool = pool.length > 0 ? pool : availableSources;
+    const randomIndex = Math.floor(Math.random() * finalPool.length);
+
+    return finalPool[randomIndex];
 }
 
 function createAudio(source, volume = 0.95) {
@@ -226,22 +579,30 @@ async function loadQuestions() {
 function initSortingQuiz() {
     const progressEl = document.getElementById('sorting-progress');
     const questionEl = document.getElementById('sorting-question');
+    const questionContainerEl = questionEl?.parentElement;
     const optionsEl = document.getElementById('sorting-options');
-    const optionsContainerEl = optionsEl?.parentElement;
+    const optionsContainerEl = document.getElementById('sorting-options-panel');
     const resultEl = document.getElementById('sorting-result');
     const resultHouseEl = document.getElementById('sorting-house-name');
     const resultCopyEl = document.getElementById('sorting-result-copy');
     const restartButton = document.getElementById('sorting-restart');
+    const sortingMainEl = document.getElementById('sorting-main');
+    const audioGateEl = document.getElementById('audio-gate');
+    const audioEnableButton = document.getElementById('audio-enable-button');
 
     if (
         !(progressEl instanceof HTMLElement) ||
         !(questionEl instanceof HTMLElement) ||
+        !(questionContainerEl instanceof HTMLElement) ||
         !(optionsEl instanceof HTMLElement) ||
         !(optionsContainerEl instanceof HTMLElement) ||
         !(resultEl instanceof HTMLElement) ||
         !(resultHouseEl instanceof HTMLElement) ||
         !(resultCopyEl instanceof HTMLElement) ||
-        !(restartButton instanceof HTMLButtonElement)
+        !(restartButton instanceof HTMLButtonElement) ||
+        !(sortingMainEl instanceof HTMLElement) ||
+        !(audioGateEl instanceof HTMLElement) ||
+        !(audioEnableButton instanceof HTMLButtonElement)
     ) {
         return;
     }
@@ -251,6 +612,7 @@ function initSortingQuiz() {
     let questions = [];
     let hasSentResult = false;
     let isTransitioning = false;
+    let hasStarted = false;
     let playedSortingHatFragments = [];
     let activeSortingHatFragments = new Set();
     let sortingHatFragmentPlaybackToken = 0;
@@ -258,12 +620,56 @@ function initSortingQuiz() {
     let pendingRevealHouse = null;
     let houseRevealAudio = null;
     let houseRevealLocked = false;
+    let houseRevealHatImagePulseTimer = null;
+
+    function startSortingFlow() {
+        if (hasStarted) {
+            return;
+        }
+
+        hasStarted = true;
+        document.body.classList.remove('audio-gate-visible');
+        audioGateEl.classList.add('hidden');
+        sortingMainEl.classList.remove('hidden');
+        sortingMainEl.classList.add('flex');
+
+        void window.unlockBackgroundAudio?.().then((didUnlock) => {
+            if (!didUnlock) {
+                return;
+            }
+
+            if (typeof window.playSortingHatWelcomeAudio === 'function') {
+                window.playSortingHatWelcomeAudio();
+            }
+        });
+
+        void loadQuestions()
+            .then((data) => {
+                questions = pickRandomQuestions(data.questions, 10);
+                const state = resetStoredState();
+                currentQuestionIndex = state.currentQuestionIndex;
+                scores = state.scores;
+                hasSentResult = false;
+                isTransitioning = false;
+                resetSortingHatFragments();
+                resetHouseRevealState();
+                renderQuestion();
+            })
+            .catch(() => {
+                progressEl.textContent = 'Sorting unavailable';
+                questionContainerEl.classList.remove('hidden');
+                questionEl.classList.remove('hidden');
+                questionEl.textContent = 'The Sorting Hat questions could not be loaded.';
+                optionsEl.innerHTML = '';
+                resultEl.classList.add('hidden');
+            });
+    }
 
     function setQuizPromptVisibility(isVisible) {
         const method = isVisible ? 'remove' : 'add';
 
         progressEl.classList[method]('hidden');
-        questionEl.classList[method]('hidden');
+        questionContainerEl.classList[method]('hidden');
         optionsContainerEl.classList[method]('hidden');
     }
 
@@ -286,12 +692,48 @@ function initSortingQuiz() {
         playedSortingHatFragments = [];
     }
 
+    function stopHouseRevealHatImagePulse() {
+        if (houseRevealHatImagePulseTimer !== null) {
+            window.clearTimeout(houseRevealHatImagePulseTimer);
+            houseRevealHatImagePulseTimer = null;
+        }
+    }
+
+    function triggerSortingHatImagePulse(
+        durationMs = 2000,
+        minDelayMs = SORTING_HAT_IMAGE_PULSE_MIN_MS,
+        maxDelayMs = SORTING_HAT_IMAGE_PULSE_MAX_MS
+    ) {
+        stopHouseRevealHatImagePulse();
+
+        const startedAt = Date.now();
+
+        const tick = () => {
+            if (Date.now() - startedAt >= durationMs) {
+                stopHouseRevealHatImagePulse();
+                return;
+            }
+
+            if (typeof window.switchSortingHatImageNow === 'function') {
+                window.switchSortingHatImageNow();
+            }
+
+            houseRevealHatImagePulseTimer = window.setTimeout(
+                tick,
+                minDelayMs + Math.random() * (maxDelayMs - minDelayMs)
+            );
+        };
+
+        tick();
+    }
+
     function resetHouseRevealState() {
         if (houseRevealAudio) {
             houseRevealAudio.pause();
             houseRevealAudio.currentTime = 0;
         }
 
+        stopHouseRevealHatImagePulse();
         houseRevealAudio = null;
         houseRevealLocked = false;
         pendingRevealHouse = null;
@@ -316,8 +758,10 @@ function initSortingQuiz() {
         }
 
         houseRevealAudio = createAudio(source, 0.95);
+        triggerSortingHatImagePulse(7000);
 
         try {
+            await showSortingHatSubtitleForSource(source);
             await playAudioAndWait(houseRevealAudio);
             pendingRevealHouse = house;
             showRevealHouseButton();
@@ -325,11 +769,16 @@ function initSortingQuiz() {
             console.info('Sorting Hat reveal intro was blocked by the browser.', error);
             pendingRevealHouse = house;
             showRevealHouseButton();
+        } finally {
+            clearSortingHatSubtitleForSource(source);
+            stopHouseRevealHatImagePulse();
         }
     }
 
     function revealHouseResult(house) {
         const source = getRevealHouseAudio(house, 'second');
+
+        triggerSortingHatImagePulse(HOUSE_REVEAL_SORTING_HAT_IMAGE_PULSE_DURATION_MS);
 
         const finalizeReveal = () => {
             resultEl.style.animation = 'none';
@@ -337,6 +786,7 @@ function initSortingQuiz() {
             resultEl.classList.add('opacity-100');
             optionsEl.innerHTML = '';
             resultHouseEl.textContent = `${formatHouseName(house)}!`;
+            resultHouseEl.classList.add('text-center');
             resultCopyEl.classList.add('hidden');
             resultCopyEl.textContent = '';
             restartButton.classList.add('hidden');
@@ -370,6 +820,7 @@ function initSortingQuiz() {
                 console.info('Sorting Hat reveal audio was blocked by the browser.', error);
             })
             .finally(() => {
+                clearSortingHatSubtitleForSource(source);
                 houseRevealLocked = false;
             });
     }
@@ -385,7 +836,7 @@ function initSortingQuiz() {
 
         revealHouseButton = document.createElement('button');
         revealHouseButton.type = 'button';
-        revealHouseButton.className = 'group flex w-full items-center justify-between rounded-none border px-4 py-3 text-center text-sm text-amber-50 transition-colors duration-200 focus:outline-none focus-visible:outline-none sm:text-base';
+        revealHouseButton.className = 'mx-auto mt-2 inline-flex w-auto max-w-full cursor-pointer appearance-none border-0 bg-transparent p-0 text-center font-inkpot text-3xl text-amber-50 transition-colors duration-200 hover:text-amber-200 focus:outline-none focus-visible:outline-none sm:text-4xl';
         revealHouseButton.textContent = 'Reveal house';
 
         revealHouseButton.addEventListener('click', () => {
@@ -404,7 +855,14 @@ function initSortingQuiz() {
         resultEl.classList.add('opacity-100');
         resultCopyEl.classList.add('hidden');
         restartButton.classList.add('hidden');
-        resultEl.insertBefore(revealHouseButton, resultCopyEl);
+
+        const insertionParent = resultCopyEl.parentElement;
+
+        if (insertionParent) {
+            insertionParent.insertBefore(revealHouseButton, resultCopyEl);
+        } else {
+            resultEl.appendChild(revealHouseButton);
+        }
     }
 
     function playSortingHatFragment() {
@@ -424,6 +882,7 @@ function initSortingQuiz() {
 
         const removeAudio = () => {
             activeSortingHatFragments.delete(audio);
+            clearSortingHatSubtitleForSource(source);
         };
 
         audio.addEventListener('ended', removeAudio, { once: true });
@@ -432,7 +891,8 @@ function initSortingQuiz() {
         playedSortingHatFragments = [...playedSortingHatFragments, source].slice(-SORTING_HAT_FRAGMENT_HISTORY_LIMIT);
 
         reserveAudioStartSlot()
-            .then(() => {
+            .then(() => sortingHatSubtitlesPromise)
+            .then(async () => {
                 if (playbackToken !== sortingHatFragmentPlaybackToken) {
                     activeSortingHatFragments.delete(audio);
                     const staleSourceIndex = playedSortingHatFragments.lastIndexOf(source);
@@ -444,6 +904,7 @@ function initSortingQuiz() {
                     return;
                 }
 
+                await showSortingHatSubtitleForSource(source);
                 return audio.play();
             })
             .catch((error) => {
@@ -455,6 +916,7 @@ function initSortingQuiz() {
                     playedSortingHatFragments.splice(failedSourceIndex, 1);
                 }
 
+                clearSortingHatSubtitleForSource(source);
                 console.info('Sorting Hat fragment autoplay was blocked by the browser.', error);
             });
     }
@@ -468,9 +930,15 @@ function initSortingQuiz() {
             window.cancelSortingHatWelcomeAudio();
         }
 
-        if (typeof window.switchSortingHatImageNow === 'function') {
-            window.switchSortingHatImageNow();
+        if (typeof window.cancelSortingHatImageCycle === 'function') {
+            window.cancelSortingHatImageCycle();
         }
+
+        triggerSortingHatImagePulse(
+            2000,
+            ANSWER_SORTING_HAT_IMAGE_PULSE_MIN_MS,
+            ANSWER_SORTING_HAT_IMAGE_PULSE_MAX_MS
+        );
 
         HOUSE_ORDER.forEach((house) => {
             scores[house] += Number(answer?.scores?.[house] ?? 0);
@@ -486,8 +954,17 @@ function initSortingQuiz() {
         void renderQuestion();
     }
 
-    function renderResult() {
+    async function renderResult() {
         const winningHouse = getWinningHouse(scores);
+
+        optionsEl.classList.add('pointer-events-none');
+        playExitAnimation([progressEl, questionEl, ...Array.from(optionsEl.children)]);
+
+        await new Promise((resolve) => {
+            window.setTimeout(resolve, QUESTION_TRANSITION_MS);
+        });
+
+        optionsEl.classList.remove('pointer-events-none');
 
         setQuizPromptVisibility(false);
         optionsEl.innerHTML = '';
@@ -503,7 +980,7 @@ function initSortingQuiz() {
         const question = questions[currentQuestionIndex];
 
         if (!question) {
-            renderResult();
+            void renderResult();
             return;
         }
 
@@ -511,8 +988,16 @@ function initSortingQuiz() {
             isTransitioning = true;
             optionsEl.classList.add('pointer-events-none');
 
-            const existingButtons = Array.from(optionsEl.querySelectorAll('button'));
-            playExitAnimation(questionEl, existingButtons);
+            const existingViews = Array.from(optionsEl.children);
+            const exitingOptionElements = existingViews.flatMap((view) => {
+                if (!(view instanceof HTMLElement)) {
+                    return [];
+                }
+
+                return Array.from(view.children);
+            });
+
+            playExitAnimation([progressEl, questionEl, ...exitingOptionElements]);
 
             await new Promise((resolve) => {
                 window.setTimeout(resolve, QUESTION_TRANSITION_MS);
@@ -525,37 +1010,44 @@ function initSortingQuiz() {
         setQuizPromptVisibility(true);
         resultEl.classList.add('hidden');
         resultEl.classList.remove('opacity-100');
-        progressEl.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
-        questionEl.textContent = question.question;
-        setEnterState(questionEl);
-        optionsEl.className = getAnswerGridClass(question.answers?.length ?? 0);
+        questionEl.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+        questionContainerEl.classList.remove('hidden');
+        questionEl.classList.remove('hidden');
+        progressEl.textContent = question.question;
         optionsEl.innerHTML = '';
 
         const answers = Array.isArray(question.answers) ? question.answers : [];
-        const renderedButtons = [];
 
-        answers.forEach((answer, index) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'group flex items-center justify-between rounded-none border border-amber-100/5 bg-amber-50/5 px-4 py-3 text-left text-sm text-amber-50 transition-all duration-200 ease-out hover:border-amber-50/30 hover:bg-amber-50/10 focus:outline-none focus-visible:outline-none sm:text-base';
+        if (answers.length === 0) {
+            const noAnswersMessage = document.createElement('p');
+            noAnswersMessage.className = 'font-inkpot text-sm text-amber-100/70 sm:text-base';
+            noAnswersMessage.textContent = 'No answers available for this question.';
+            optionsEl.appendChild(noAnswersMessage);
+            setEnterState(noAnswersMessage);
+            playEnterAnimation([progressEl, questionEl, noAnswersMessage]);
+            isTransitioning = false;
+            return;
+        }
 
-            const answerText = document.createElement('span');
-            answerText.textContent = answer.text;
+        const { container, controls } = createAnswerCarousel(answers, applyAnswer);
+        optionsEl.appendChild(container);
 
-            const arrow = document.createElement('span');
-            arrow.setAttribute('aria-hidden', 'true');
-            arrow.className = 'text-amber-200/80 transition-transform duration-200 group-hover:translate-x-1';
-            arrow.textContent = '→';
+        const revealItems = [progressEl, questionEl, container, ...controls];
+        const revealDelayMs = currentQuestionIndex === 0 ? INITIAL_SORTING_UI_DELAY_MS : SORTING_UI_DELAY_MS;
+        const revealStaggerMs = currentQuestionIndex === 0 ? 0 : SORTING_UI_STAGGER_MS;
 
-            button.append(answerText, arrow);
-            button.addEventListener('click', () => applyAnswer(answer));
-            button.style.transitionDelay = `${index * BUTTON_STAGGER_MS}ms`;
-            setEnterState(button);
-            optionsEl.appendChild(button);
-            renderedButtons.push(button);
+        revealItems.forEach((element, index) => {
+            setEnterState(element);
+            element.style.transitionDelay = `${revealDelayMs + index * revealStaggerMs}ms`;
         });
 
-        playEnterAnimation([questionEl, ...renderedButtons]);
+        window.setTimeout(() => {
+            revealItems.forEach((element) => {
+                element.classList.remove('opacity-0');
+                element.classList.add('opacity-100');
+            });
+        }, 40);
+
         isTransitioning = false;
     }
 
@@ -570,24 +1062,10 @@ function initSortingQuiz() {
         renderQuestion();
     });
 
-    void loadQuestions()
-        .then((data) => {
-            questions = pickRandomQuestions(data.questions, 10);
-            const state = resetStoredState();
-            currentQuestionIndex = state.currentQuestionIndex;
-            scores = state.scores;
-            hasSentResult = false;
-            isTransitioning = false;
-            resetSortingHatFragments();
-            resetHouseRevealState();
-            renderQuestion();
-        })
-        .catch(() => {
-            progressEl.textContent = 'Sorting unavailable';
-            questionEl.textContent = 'The Sorting Hat questions could not be loaded.';
-            optionsEl.innerHTML = '';
-            resultEl.classList.add('hidden');
-        });
+    audioEnableButton.addEventListener('click', startSortingFlow);
 }
 
 document.addEventListener('DOMContentLoaded', initSortingQuiz);
+
+window.showSortingHatSubtitleForSource = showSortingHatSubtitleForSource;
+window.clearSortingHatSubtitle = clearSortingHatSubtitleForSource;

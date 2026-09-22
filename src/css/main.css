@@ -99,6 +99,18 @@
 }
 
 @layer utilities {
+	body.audio-gate-visible #sorting-backdrop,
+	body.audio-gate-visible #sorting-overlay,
+	body.audio-gate-visible #sorting-main,
+	body.audio-gate-visible #sorting-main * {
+		animation: none !important;
+	}
+
+	body.audio-gate-visible #sorting-main {
+		opacity: 0;
+		visibility: hidden;
+	}
+
 	[data-reveal] {
 		opacity: 0;
 	}

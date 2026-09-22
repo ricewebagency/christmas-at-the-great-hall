@@ -1,0 +1,219 @@
+[
+  {
+    "fileName": "ah-i-see.mp3",
+    "sentences": [
+      {
+        "text": "Ah, I see.",
+        "durationMs": 1400
+      }
+    ]
+  },
+  {
+    "fileName": "alright-very-well.mp3",
+    "sentences": [
+      {
+        "text": "All right, very well.",
+        "durationMs": 1700
+      }
+    ]
+  },
+  {
+    "fileName": "go-on-hurry-up.mp3",
+    "sentences": [
+      {
+        "text": "Go on, hurry up.",
+        "durationMs": 1600
+      }
+    ]
+  },
+  {
+    "fileName": "gryffindor-1.mp3",
+    "sentences": [
+      {
+        "text": "Ah, courage, nerve, and a daring heart.",
+        "durationMs": 3700
+      },
+      {
+        "text": "There's no doubt about you.",
+        "durationMs": 1900
+      }
+    ]
+  },
+  {
+    "fileName": "gryffindor-2.mp3",
+    "sentences": [
+      {
+        "text": "Gryffindor!",
+        "durationMs": 1400
+      }
+    ]
+  },
+  {
+    "fileName": "ha-okay.mp3",
+    "sentences": [
+      {
+        "text": "Ah, okay.",
+        "durationMs": 1300
+      }
+    ]
+  },
+  {
+    "fileName": "hufflepuff-1.mp3",
+    "sentences": [
+      {
+        "text": "Loyal, patient, and true to the very end.",
+        "durationMs": 4500
+      },
+      {
+        "text": "I know exactly where to put you.",
+        "durationMs": 2300
+      }
+    ]
+  },
+  {
+    "fileName": "hufflepuff-2.mp3",
+    "sentences": [
+      {
+        "text": "Hufflepuff!",
+        "durationMs": 1400
+      }
+    ]
+  },
+  {
+    "fileName": "interesting.mp3",
+    "sentences": [
+      {
+        "text": "Interesting.",
+        "durationMs": 1200
+      }
+    ]
+  },
+  {
+    "fileName": "i-would-not-have-guessed.mp3",
+    "sentences": [
+      {
+        "text": "I would not have guessed that.",
+        "durationMs": 2100
+      }
+    ]
+  },
+  {
+    "fileName": "mmm-alrighty-then.mp3",
+    "sentences": [
+      {
+        "text": "Hmm, all righty then.",
+        "durationMs": 1800
+      }
+    ]
+  },
+  {
+    "fileName": "mmm-okay.mp3",
+    "sentences": [
+      {
+        "text": "Hmm, okay.",
+        "durationMs": 1300
+      }
+    ]
+  },
+  {
+    "fileName": "pick-your-next-one-wisely.mp3",
+    "sentences": [
+      {
+        "text": "Pick your next one wisely.",
+        "durationMs": 1900
+      }
+    ]
+  },
+  {
+    "fileName": "ravenclaw-1.mp3",
+    "sentences": [
+      {
+        "text": "Hmm, a sharp mind, endless curiosity,",
+        "durationMs": 4000
+      },
+      {
+        "text": "and wisdom beyond your years.",
+        "durationMs": 1900
+      }
+    ]
+  },
+  {
+    "fileName": "ravenclaw-2.mp3",
+    "sentences": [
+      {
+        "text": "Ravenclaw!",
+        "durationMs": 1400
+      }
+    ]
+  },
+  {
+    "fileName": "slytherin-1.mp3",
+    "sentences": [
+      {
+        "text": "Oh yes, ambition, cunning,",
+        "durationMs": 3000
+      },
+      {
+        "text": "and a hunger to go far.",
+        "durationMs": 2100
+      }
+    ]
+  },
+  {
+    "fileName": "slytherin-2.mp3",
+    "sentences": [
+      {
+        "text": "Slytherin!",
+        "durationMs": 1400
+      }
+    ]
+  },
+  {
+    "fileName": "thats-an-interesting-pick.mp3",
+    "sentences": [
+      {
+        "text": "That's an interesting pick.",
+        "durationMs": 1700
+      }
+    ]
+  },
+  {
+    "fileName": "very-well-then.mp3",
+    "sentences": [
+      {
+        "text": "Very well then.",
+        "durationMs": 1500
+      }
+    ]
+  },
+  {
+    "fileName": "youre-almost-there.mp3",
+    "sentences": [
+      {
+        "text": "You're almost there.",
+        "durationMs": 1500
+      }
+    ]
+  },
+  {
+    "fileName": "sorting-hat-welcome.mp3",
+    "sentences": [
+      {
+        "text": "Welcome to Christmas at the Great Hall.",
+        "durationMs": 3500
+      },
+      {
+        "text": "Today, we will be looking for your house.",
+        "durationMs": 3200
+      },
+      {
+        "text": "Please answer these questions,",
+        "durationMs": 2500
+      },
+      {
+        "text": "and I will sort you accordingly.",
+        "durationMs": 2200
+      }
+    ]
+  }
+]

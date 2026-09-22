@@ -8,11 +8,30 @@ function unlockBackgroundAudio() {
     audio.muted = false;
     audio.volume = 0.28;
 
-    return audio.play().then(() => true).catch((error) => {
+    return audio.play().then(() => {
+        window.audioIsEnabled = true;
+        return true;
+    }).catch((error) => {
         console.info("Background audio autoplay was blocked by the browser.", error);
         return false;
     });
 }
+
+function getAudioSourceFromElement(audio) {
+    if (audio.currentSrc) {
+        return audio.currentSrc;
+    }
+
+    const sourceElement = audio.querySelector("source[src]");
+
+    if (sourceElement instanceof HTMLSourceElement) {
+        return sourceElement.getAttribute("src") ?? "";
+    }
+
+    return audio.getAttribute("src") ?? "";
+}
+
+const SORTING_HAT_WELCOME_AUDIO_SOURCE = './assets/music/sorting-hat/sorting-hat-welcome.mp3';
 
 const SORTING_HAT_IMAGE_SOURCES = [
     './assets/images/sorting-hat-talking-1.png',
@@ -28,11 +47,26 @@ const SORTING_HAT_IMAGE_CYCLE_DURATION_MS = 11000;
 let sortingHatAudioDelayElapsed = false;
 let sortingHatAudioStarted = false;
 let sortingHatAudioCancelled = false;
+let sortingHatImageCycleCancelled = false;
+let sortingHatImageCycleTimeoutId = null;
+let sortingHatWelcomeAudio = null;
+
+function getSortingHatWelcomeAudio() {
+    if (sortingHatWelcomeAudio instanceof HTMLAudioElement) {
+        return sortingHatWelcomeAudio;
+    }
+
+    sortingHatWelcomeAudio = new Audio(SORTING_HAT_WELCOME_AUDIO_SOURCE);
+    sortingHatWelcomeAudio.src = SORTING_HAT_WELCOME_AUDIO_SOURCE;
+    sortingHatWelcomeAudio.preload = 'auto';
+
+    return sortingHatWelcomeAudio;
+}
 
 function cancelSortingHatWelcomeAudio() {
     sortingHatAudioCancelled = true;
 
-    const audio = document.getElementById("background-audio-2");
+    const audio = getSortingHatWelcomeAudio();
 
     if (!(audio instanceof HTMLAudioElement)) {
         return;
@@ -40,6 +74,19 @@ function cancelSortingHatWelcomeAudio() {
 
     audio.pause();
     audio.currentTime = 0;
+
+    if (typeof window.clearSortingHatSubtitle === "function") {
+        window.clearSortingHatSubtitle();
+    }
+}
+
+function cancelSortingHatImageCycle() {
+    sortingHatImageCycleCancelled = true;
+
+    if (sortingHatImageCycleTimeoutId !== null) {
+        window.clearTimeout(sortingHatImageCycleTimeoutId);
+        sortingHatImageCycleTimeoutId = null;
+    }
 }
 
 function getNextSortingHatImageSource(currentSource) {
@@ -67,9 +114,16 @@ function startSortingHatImageCycle() {
         return;
     }
 
+    cancelSortingHatImageCycle();
+    sortingHatImageCycleCancelled = false;
+
     const startedAt = Date.now();
 
     const scheduleNextSwap = () => {
+        if (sortingHatImageCycleCancelled) {
+            return;
+        }
+
         const elapsed = Date.now() - startedAt;
         const remaining = SORTING_HAT_IMAGE_CYCLE_DURATION_MS - elapsed;
 
@@ -80,7 +134,11 @@ function startSortingHatImageCycle() {
         const maxDelay = Math.min(SORTING_HAT_IMAGE_CYCLE_MAX_MS, remaining);
         const delay = SORTING_HAT_IMAGE_CYCLE_MIN_MS + Math.random() * (maxDelay - SORTING_HAT_IMAGE_CYCLE_MIN_MS);
 
-        window.setTimeout(() => {
+        sortingHatImageCycleTimeoutId = window.setTimeout(() => {
+            if (sortingHatImageCycleCancelled) {
+                return;
+            }
+
             switchSortingHatImageNow();
             scheduleNextSwap();
         }, delay);
@@ -94,7 +152,7 @@ function tryStartSortingHatAudio() {
         return;
     }
 
-    const audio = document.getElementById("background-audio-2");
+    const audio = getSortingHatWelcomeAudio();
 
     if (!(audio instanceof HTMLAudioElement)) {
         return;
@@ -102,10 +160,34 @@ function tryStartSortingHatAudio() {
 
     sortingHatAudioStarted = true;
 
-    audio.play().then(() => {
-        startSortingHatImageCycle();
+    const source = SORTING_HAT_WELCOME_AUDIO_SOURCE;
+
+    Promise.resolve(
+        typeof window.showSortingHatSubtitleForSource === "function"
+            ? window.showSortingHatSubtitleForSource(source)
+            : undefined
+    ).then(() => {
+        if (sortingHatAudioCancelled) {
+            sortingHatAudioStarted = false;
+            return;
+        }
+
+        audio.addEventListener("ended", () => {
+            if (typeof window.clearSortingHatSubtitle === "function") {
+                window.clearSortingHatSubtitle();
+            }
+        }, { once: true });
+
+        return audio.play().then(() => {
+            startSortingHatImageCycle();
+        });
     }).catch((error) => {
         sortingHatAudioStarted = false;
+
+        if (typeof window.clearSortingHatSubtitle === "function") {
+            window.clearSortingHatSubtitle();
+        }
+
         console.info("Sorting audio autoplay was blocked by the browser.", error);
     });
 }
@@ -121,9 +203,19 @@ function playDelayedSortingAudio() {
     }, SORTING_HAT_AUDIO_DELAY_MS);
 }
 
+function playSortingHatWelcomeAudio() {
+    sortingHatAudioDelayElapsed = true;
+    tryStartSortingHatAudio();
+}
+
+window.audioIsEnabled = false;
 window.unlockBackgroundAudio = unlockBackgroundAudio;
 window.cancelSortingHatWelcomeAudio = cancelSortingHatWelcomeAudio;
+window.cancelSortingHatImageCycle = cancelSortingHatImageCycle;
 window.switchSortingHatImageNow = switchSortingHatImageNow;
+window.playDelayedSortingAudio = playDelayedSortingAudio;
+window.playSortingHatWelcomeAudio = playSortingHatWelcomeAudio;
+window.tryStartSortingHatAudio = tryStartSortingHatAudio;
 
 document.addEventListener("DOMContentLoaded", () => {
     const audio = document.getElementById("background-audio");
@@ -133,13 +225,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const maybeStartAudio = () => {
-        void unlockBackgroundAudio();
-        tryStartSortingHatAudio();
+        if (window.audioIsEnabled) {
+            tryStartSortingHatAudio();
+            return;
+        }
+
+        void unlockBackgroundAudio().then((unlocked) => {
+            if (unlocked) {
+                tryStartSortingHatAudio();
+            }
+        });
     };
 
     document.addEventListener("pointerdown", maybeStartAudio);
     document.addEventListener("keydown", maybeStartAudio);
-
-    void unlockBackgroundAudio();
-    playDelayedSortingAudio();
 });

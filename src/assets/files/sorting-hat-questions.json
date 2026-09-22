@@ -20,7 +20,7 @@
   "questions": [
     {
       "id": "dawn_dusk",
-      "question": "Dawn or dusk?",
+      "question": "Do you prefer dawn or dusk?",
       "answers": [
         {
           "text": "Dawn",
@@ -44,7 +44,7 @@
     },
     {
       "id": "forest_river",
-      "question": "Forest or river?",
+      "question": "Which do you like more? A forest or a river?",
       "answers": [
         {
           "text": "Forest",
@@ -68,7 +68,7 @@
     },
     {
       "id": "moon_stars",
-      "question": "Moon or stars?",
+      "question": "Are you more attracted to the moon or the stars?",
       "answers": [
         {
           "text": "Moon",

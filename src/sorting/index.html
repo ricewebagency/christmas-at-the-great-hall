@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="nl">
+<html lang="nl" class="overscroll-x-none [overflow-x:clip]">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Magical Winter Banquet | Sorting Hat</title>
+    <title>Christmas at the Great Hall | Sorting Hat</title>
     <link rel="icon" href="./favicon.ico">
     <link rel="stylesheet" href="./css/main.css">
     <script src="./js/reveal-sequence.js" defer></script>
@@ -13,63 +13,90 @@
     <script type="module" src="./js/sorting.js"></script>
 </head>
 
-<body class="relative min-h-screen overflow-x-hidden bg-neutral-950 font-serif text-amber-50 antialiased">
-    <audio id="background-audio" preload="auto" loop autoplay>
+<body
+    class="audio-gate-visible relative min-h-screen touch-pan-y overscroll-x-none [overflow-x:clip] overflow-y-hidden bg-neutral-950 font-serif text-amber-50 antialiased">
+    <audio id="background-audio" preload="auto" loop autoplay muted>
         <source src="./assets/music/platform-nine-and-three-quarters.mp3" type="audio/mp3">
     </audio>
-    <audio id="background-audio-2" preload="auto">
-        <source src="./assets/music/sorting-hat-welcome.mp3" type="audio/mp3">
-    </audio>
 
-    <div aria-hidden="true"
-        class="burnt-paper-bg pointer-events-none absolute inset-0 z-0 origin-center bg-[url('../assets/images/the-great-hall.png')] bg-cover bg-center bg-no-repeat opacity-100 animate-[backgroundZoom_1.8s_ease-out_forwards]">
+    <div id="sorting-backdrop" aria-hidden="true"
+        class="burnt-paper-bg pointer-events-none fixed inset-0 z-0 origin-center bg-[url('../assets/images/the-great-hall.png')] bg-cover bg-center bg-no-repeat opacity-100 animate-[backgroundZoom_1.8s_ease-out_forwards]">
     </div>
-    <div aria-hidden="true"
-        class="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-transparent via-black/70 to-black opacity-0 animate-[fadeInOverlay_1.8s_ease-out_forwards]">
+    <div id="sorting-overlay" aria-hidden="true"
+        class="pointer-events-none fixed inset-0 z-[1] bg-gradient-to-b from-transparent via-black/70 to-black opacity-0 animate-[fadeInOverlay_1.8s_ease-out_forwards]">
     </div>
 
-    <main class="relative z-10 flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
+    <div id="audio-gate" class="fixed inset-0 z-30 flex items-center justify-center bg-black/70">
+        <button id="audio-enable-button" type="button" aria-label="Enable audio"
+            class="group inline-flex items-center justify-center border-0 bg-transparent p-0 text-amber-50 transition-transform duration-200 hover:scale-105 active:scale-95 focus:outline-none focus-visible:outline-none">
+            <svg aria-hidden="true" viewBox="0 0 24 24"
+                class="h-12 w-12 fill-current drop-shadow-[0_0_18px_rgba(251,191,36,0.4)] sm:h-14 sm:w-14">
+                <path
+                    d="M3 10.5v3h4l5 5V5.5l-5 5H3Zm12 1.5c0-1.8-1.1-3.3-2.5-4.1v8.2c1.4-.8 2.5-2.3 2.5-4.1Zm3-6.2v2.2A8.6 8.6 0 0 1 21 12a8.6 8.6 0 0 1-2.5 5.4V19.7A10.8 10.8 0 0 0 23 12a10.8 10.8 0 0 0-5-8.2Z" />
+            </svg>
+        </button>
+    </div>
+
+    <main id="sorting-main"
+        class="relative z-10 hidden min-h-screen items-center justify-center overflow-x-hidden px-4 py-8 sm:px-6 sm:py-10">
         <section
-            class="relative z-10 w-full max-w-2xl opacity-0 animate-[revealFade_0.8s_ease-out_forwards] [animation-delay:1.8s]">
+            class="relative z-10 w-full max-w-2xl overflow-x-hidden opacity-0 animate-[revealFade_0.8s_ease-out_forwards] [animation-delay:0.12s]">
             <div class="p-5 sm:p-8">
-                <div class="text-center opacity-0 animate-[revealFade_0.8s_ease-out_forwards] [animation-delay:1.2s]">
+                <div class="text-center opacity-0 animate-[revealFade_0.8s_ease-out_forwards] [animation-delay:0.08s]">
                     <img id="sorting-hat-image" src="./assets/images/sorting-hat-talking-1.png" alt="Sorting Hat"
                         class="mx-auto h-40 w-auto drop-shadow-[0_18px_32px_rgba(0,0,0,0.7)] sm:h-52">
+                    <p id="sorting-subtitles"
+                        class="mx-auto mt-4 max-w-3xl text-center font-inkpot text-base leading-relaxed text-white opacity-0 transition-opacity duration-300 ease-out drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)] sm:text-lg"
+                        aria-live="polite" aria-atomic="true"></p>
                 </div>
 
-                <div class="mt-8 space-y-6 text-left text-charcoal">
-                    <div class="space-y-2 opacity-0 animate-[revealFade_0.8s_ease-out_forwards] [animation-delay:1.8s]">
-                        <h1 id="sorting-progress" class="font-inkpot text-3xl text-amber-50 sm:text-4xl">Loading
-                            questions</h1>
+                <div class="mt-8 flex flex-col gap-4 text-left font-inkpot text-amber-50 sm:gap-5">
+                    <div class="overflow-hidden">
+                        <p id="sorting-question"
+                            class="hidden text-sm leading-relaxed text-amber-100/80 opacity-0 sm:text-base">
+                            Loading progress...
+                        </p>
                     </div>
 
-                    <p id="sorting-question"
-                        class="text-base leading-relaxed text-amber-50/85 opacity-0 animate-[revealFade_0.8s_ease-out_forwards] sm:text-lg [animation-delay:2.1s]">
-                        Loading the Sorting Hat questions...
-                    </p>
-
-                    <div
-                        class="h-[200px] min-h-[200px] max-h-[200px] shrink-0 overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                        <div id="sorting-options" class="grid gap-3 sm:grid-cols-2"></div>
+                    <div class="overflow-hidden">
+                        <h1 id="sorting-progress" class="hidden font-inkpot text-3xl text-amber-50 sm:text-4xl">Loading
+                            questions
+                        </h1>
                     </div>
 
-                    <div id="sorting-result" class="hidden space-y-4 rounded-none px-4 py-5 text-amber-50 opacity-0">
-                        <p class="hidden text-[0.65rem] uppercase tracking-[0.34em] text-amber-100/80">Result</p>
-                        <h2 id="sorting-house-name" class="font-inkpot text-3xl sm:text-4xl">The Sorting Hat has spoken
-                        </h2>
-                        <p id="sorting-result-copy"
-                            class="hidden text-base leading-relaxed text-amber-50/85 sm:text-lg"></p>
-                        <button id="sorting-restart" type="button"
-                            class="hidden group flex w-full items-center justify-between rounded-none border px-4 py-3 text-center text-sm text-amber-50 transition-colors duration-200 focus:outline-none focus-visible:outline-none sm:text-base">
-                            <span>Try again</span>
-                            <span aria-hidden="true"
-                                class="text-amber-200/80 transition-transform duration-200 group-hover:translate-x-1">→</span>
-                        </button>
+                    <div class="relative overflow-hidden">
+                        <div id="sorting-options-panel"
+                            class="w-full max-w-full overflow-x-hidden opacity-0 animate-[revealFade_0.8s_ease-out_forwards] [animation-delay:1.8s]">
+                            <div
+                                class="max-h-[32rem] overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                                <div id="sorting-options" class="w-full"></div>
+                            </div>
+                        </div>
+
+                        <div id="sorting-result"
+                            class="hidden overflow-y-auto px-1 py-1 text-center font-inkpot text-amber-50 opacity-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                            <div
+                                class="flex flex-col items-center justify-center space-y-4 rounded-none px-3 py-2 text-center sm:px-4 sm:py-3">
+                                <p class="hidden text-[0.65rem] uppercase tracking-[0.34em] text-amber-100/80">Result
+                                </p>
+                                <h2 id="sorting-house-name" class="font-inkpot text-3xl sm:text-4xl"></h2>
+                                <p id="sorting-result-copy"
+                                    class="hidden text-center font-inkpot text-base leading-relaxed text-amber-50/85 sm:text-lg">
+                                </p>
+                                <button id="sorting-restart" type="button"
+                                    class="hidden group w-full max-w-full box-border rounded-none border px-4 py-3 text-center text-sm font-inkpot text-amber-50 transition-colors duration-200 focus:outline-none focus-visible:outline-none sm:text-base">
+                                    <span>Try again</span>
+                                    <span aria-hidden="true"
+                                        class="text-amber-200/80 transition-transform duration-200 group-hover:translate-x-1">→</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
     </main>
+
 </body>
 
 </html>
