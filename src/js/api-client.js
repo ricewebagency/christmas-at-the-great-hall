@@ -35,6 +35,7 @@ export async function sendAttendanceResponse(attendanceResponse) {
 
 export async function sendSortingHouseResult(result) {
     const normalizedHouse = String(result?.house ?? "").trim();
+    const normalizedGuestName = String(result?.guestName ?? '').trim();
 
     if (!normalizedHouse) {
         throw new Error("Sorting house is required.");
@@ -43,6 +44,7 @@ export async function sendSortingHouseResult(result) {
     const normalizedScores = { ...(result?.scores ?? {}) };
 
     mockSortingResultStore.lastResult = {
+        guestName: normalizedGuestName,
         house: normalizedHouse,
         scores: normalizedScores,
         questionsAnswered: Number(result?.questionsAnswered ?? 0),

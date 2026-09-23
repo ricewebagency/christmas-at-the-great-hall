@@ -642,18 +642,6 @@ video {
   box-shadow: none;
 }
 
-.sr-only{
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
-}
-
 .pointer-events-none{
   pointer-events: none;
 }
@@ -725,6 +713,10 @@ video {
   margin-right: auto;
 }
 
+.\!mt-16{
+  margin-top: 4rem !important;
+}
+
 .mt-1{
   margin-top: 0.25rem;
 }
@@ -766,9 +758,8 @@ video {
   height: 0.875rem;
 }
 
-.size-4{
-  width: 1rem;
-  height: 1rem;
+.h-1\.5{
+  height: 0.375rem;
 }
 
 .h-12{
@@ -815,12 +806,16 @@ video {
   min-height: 0px;
 }
 
+.min-h-dvh{
+  min-height: 100dvh;
+}
+
 .min-h-screen{
   min-height: 100vh;
 }
 
-.min-h-dvh{
-  min-height: 100dvh;
+.w-1\.5{
+  width: 0.375rem;
 }
 
 .w-12{
@@ -899,6 +894,20 @@ video {
   animation: revealFade 0.8s ease-out forwards;
 }
 
+@keyframes fadeIn{
+  0%{
+    opacity: 0;
+  }
+
+  100%{
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn1800{
+  animation: fadeIn 1.8s ease-out both;
+}
+
 .cursor-pointer{
   cursor: pointer;
 }
@@ -938,6 +947,10 @@ video {
 
 .justify-between{
   justify-content: space-between;
+}
+
+.gap-12{
+  gap: 3rem;
 }
 
 .gap-2{
@@ -1002,10 +1015,6 @@ video {
   border-radius: 9999px;
 }
 
-.rounded-lg{
-  border-radius: 0.5rem;
-}
-
 .rounded-none{
   border-radius: 0px;
 }
@@ -1018,17 +1027,13 @@ video {
   border-width: 0px;
 }
 
-.border-amber-100\/70{
-  border-color: rgb(254 243 199 / 0.7);
-}
-
-.border-charcoal\/0{
-  border-color: rgb(43 43 43 / 0);
-}
-
 .bg-amber-100{
   --tw-bg-opacity: 1;
   background-color: rgb(254 243 199 / var(--tw-bg-opacity, 1));
+}
+
+.bg-amber-100\/45{
+  background-color: rgb(254 243 199 / 0.45);
 }
 
 .bg-black\/70{
@@ -1050,6 +1055,10 @@ video {
 
 .bg-\[url\(\'\.\.\/assets\/images\/burnt-paper\.png\'\)\]{
   background-image: url('../assets/images/burnt-paper.png');
+}
+
+.bg-\[url\(\'\.\.\/assets\/images\/chamber-of-secrets\.png\'\)\]{
+  background-image: url('../assets/images/chamber-of-secrets.png');
 }
 
 .bg-\[url\(\'\.\.\/assets\/images\/the-great-hall\.png\'\)\]{
@@ -1102,10 +1111,6 @@ video {
   background-repeat: no-repeat;
 }
 
-.fill-current{
-  fill: currentColor;
-}
-
 .object-cover{
   -o-object-fit: cover;
      object-fit: cover;
@@ -1132,11 +1137,6 @@ video {
 .px-1{
   padding-left: 0.25rem;
   padding-right: 0.25rem;
-}
-
-.px-2{
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
 }
 
 .px-3{
@@ -1177,6 +1177,10 @@ video {
 .py-8{
   padding-top: 2rem;
   padding-bottom: 2rem;
+}
+
+.pl-4{
+  padding-left: 1rem;
 }
 
 .pr-1{
@@ -1249,11 +1253,6 @@ video {
   line-height: 1.75rem;
 }
 
-.text-2xl{
-  font-size: 1.5rem;
-  line-height: 2rem;
-}
-
 .font-semibold{
   font-weight: 600;
 }
@@ -1311,6 +1310,10 @@ video {
   color: rgb(255 251 235 / var(--tw-text-opacity, 1));
 }
 
+.text-amber-50\/80{
+  color: rgb(255 251 235 / 0.8);
+}
+
 .text-amber-50\/85{
   color: rgb(255 251 235 / 0.85);
 }
@@ -1361,6 +1364,14 @@ video {
 
 .opacity-100{
   opacity: 1;
+}
+
+.opacity-45{
+  opacity: 0.45;
+}
+
+.opacity-50{
+  opacity: 0.5;
 }
 
 .opacity-60{
@@ -1450,6 +1461,10 @@ video {
 
 .duration-700{
   transition-duration: 700ms;
+}
+
+.duration-\[1200ms\]{
+  transition-duration: 1200ms;
 }
 
 .duration-\[2000ms\]{
@@ -1668,30 +1683,10 @@ body.audio-gate-visible #sorting-main {
   }
 }
 
-.placeholder\:text-charcoal\/55::-moz-placeholder{
-  color: rgb(43 43 43 / 0.55);
-}
-
-.placeholder\:text-charcoal\/55::placeholder{
-  color: rgb(43 43 43 / 0.55);
-}
-
-.autofill\:bg-transparent:-webkit-autofill{
-  background-color: transparent;
-}
-
-.autofill\:bg-transparent:autofill{
-  background-color: transparent;
-}
-
 .hover\:scale-105:hover{
   --tw-scale-x: 1.05;
   --tw-scale-y: 1.05;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-}
-
-.hover\:bg-transparent:hover{
-  background-color: transparent;
 }
 
 .hover\:text-amber-100:hover{
@@ -1714,21 +1709,25 @@ body.audio-gate-visible #sorting-main {
   color: rgb(43 43 43 / var(--tw-text-opacity, 1));
 }
 
+.hover\:opacity-100:hover{
+  opacity: 1;
+}
+
 .hover\:opacity-80:hover{
   opacity: 0.8;
 }
 
-.focus\:border-charcoal\/40:focus{
-  border-color: rgb(43 43 43 / 0.4);
-}
-
-.focus\:bg-transparent:focus{
-  background-color: transparent;
+.focus\:opacity-0:focus{
+  opacity: 0;
 }
 
 .focus\:outline-none:focus{
   outline: 2px solid transparent;
   outline-offset: 2px;
+}
+
+.focus-visible\:opacity-0:focus-visible{
+  opacity: 0;
 }
 
 .focus-visible\:outline-none:focus-visible{
@@ -1740,10 +1739,6 @@ body.audio-gate-visible #sorting-main {
   --tw-scale-x: .95;
   --tw-scale-y: .95;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-}
-
-.active\:bg-transparent:active{
-  background-color: transparent;
 }
 
 .disabled\:cursor-not-allowed:disabled{

@@ -14,7 +14,7 @@
     <script type="module" src="./js/rsvp-form.js"></script>
 </head>
 
-<body class="relative min-h-screen overflow-x-hidden bg-neutral-950 font-serif text-amber-50 antialiased" data-asset-base-path="../">
+<body class="relative min-h-dvh overflow-x-hidden bg-neutral-950 font-serif text-amber-50 antialiased" data-asset-base-path="../">
     <audio id="background-audio" preload="auto" loop autoplay>
         <source src="./assets/music/hedwigs-song.mp3" type="audio/mp3">
     </audio>
@@ -22,7 +22,7 @@
         class="pointer-events-none absolute inset-0 z-0 bg-[url('../assets/images/burnt-paper.png')] bg-cover bg-center bg-no-repeat opacity-100">
     </div>
 
-    <main class="relative z-10 flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
+    <main class="relative z-10 flex min-h-dvh items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
         <section id="rsvp-root"
             class="relative z-10 w-full max-w-xl p-5 text-charcoal transition duration-700 ease-out motion-reduce:transform-none motion-reduce:transition-none sm:p-8 font-inkpot">
             <p data-reveal style="--reveal-delay: 400ms;"
@@ -31,33 +31,34 @@
             </p>
             <div class="mt-8 space-y-5 text-left text-sm leading-relaxed tracking-wide text-charcoal/90 sm:text-base">
                 <p data-reveal style="--reveal-delay: 1100ms;">
-                    Thank you for your letter and for the invitation to Christmas at the Great Hall.
+                    Thank you for your letter and invitation to Christmas at the Great Hall on December 24th at 19:00.
                 </p>
                 <p data-reveal style="--reveal-delay: 1700ms;">
-                    Via this message, I am letting you know that I have received your invitation and I will send my
-                    response hereby.
+                    Via this letter, I wish to let you know that my choice to attend has been made.
                 </p>
                 <p data-reveal style="--reveal-delay: 2300ms;">
-                    Hereby I let you know my answer is:
+                    My answer to your invitation is:
                 </p>
                 <form data-reveal style="--reveal-delay: 2900ms;" class="pt-1 space-y-4">
-                    <label for="attendance-response" class="sr-only">RSVP answer</label>
-                    <input id="attendance-response" name="attendanceResponse" type="text" required
-                        class="w-full rounded-lg border border-charcoal/0 bg-transparent px-3 py-2 text-base text-charcoal placeholder:text-charcoal/55 hover:bg-transparent focus:bg-transparent active:bg-transparent focus:border-charcoal/40 focus:outline-none autofill:bg-transparent"
-                        placeholder="Type your answer here" autocomplete="off">
+                    <div class="flex items-center gap-12 pt-1 pl-4 text-left text-lg sm:text-xl">
+                        <button type="button" data-attendance-choice="yes"
+                            class="attendance-choice appearance-none border-0 bg-transparent p-0 text-charcoal/85 opacity-45 transition-opacity duration-200 hover:opacity-100 focus:outline-none focus-visible:outline-none">
+                            Yes
+                        </button>
+                        <button type="button" data-attendance-choice="no"
+                            class="attendance-choice appearance-none border-0 bg-transparent p-0 text-charcoal/85 opacity-45 transition-opacity duration-200 hover:opacity-100 focus:outline-none focus-visible:outline-none">
+                            No
+                        </button>
+                    </div>
+                    <input type="hidden" name="attendanceResponse" id="attendance-response" value="">
                     <div class="flex justify-end pt-1 text-left">
                         <button type="submit"
                             class="group inline-flex items-center gap-2 text-sm text-charcoal/85 transition-colors duration-200 hover:text-charcoal focus:outline-none focus-visible:outline-none sm:text-base">
-                            <span>Send reply</span>
-                            <svg aria-hidden="true" viewBox="0 0 24 24"
-                                class="size-4 transition-transform duration-200 group-hover:translate-x-1" fill="none"
-                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6">
-                                <path d="M5 12h12m0 0-4-4m4 4-4 4" />
-                            </svg>
+                            <span>Send message via owl →</span>
                         </button>
                     </div>
                 </form>
-                <div class="pt-6">
+                <div class="pt-2">
                     <p data-reveal style="--reveal-delay: 3400ms;" class="mt-2 text-base italic text-charcoal">Yours
                         sincerely,</p>
                     <div data-reveal style="--reveal-delay: 3900ms;" class="mt-6">

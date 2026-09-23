@@ -215,5 +215,68 @@
         "durationMs": 2200
       }
     ]
+  },
+  {
+    "fileName": "okay.mp3",
+    "sentences": [
+      {
+        "text": "Okay.",
+        "durationMs": 1400
+      }
+    ]
+  },
+  {
+    "fileName": "mmm-its-becoming-clearer-now.mp3",
+    "sentences": [
+      {
+        "text": "Mmm, it's becoming clearer now.",
+        "durationMs": 4000
+      }
+    ]
+  },
+  {
+    "fileName": "hmm-quite-revealing.mp3",
+    "sentences": [
+      {
+        "text": "Mmm, quite revealing.",
+        "durationMs": 2600
+      }
+    ]
+  },
+  {
+    "fileName": "that-is-useful-to-know.mp3",
+    "sentences": [
+      {
+        "text": "That is useful to know.",
+        "durationMs": 3200
+      }
+    ]
+  },
+  {
+    "fileName": "ha-just-as-I-thought.mp3",
+    "sentences": [
+      {
+        "text": "Ha, just as I thought.",
+        "durationMs": 2500
+      }
+    ]
+  },
+  {
+    "fileName": "mmm-unexpected.mp3",
+    "sentences": [
+      {
+        "text": "Mmm, unexpected.",
+        "durationMs": 2500
+      }
+    ]
+  },
+  {
+    "fileName": "yes-yes-i-had-a-feeling.mp3",
+    "sentences": [
+      {
+        "text": "Yes, yes, I had a feeling.",
+        "durationMs": 3600
+      }
+    ]
   }
 ]

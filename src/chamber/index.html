@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="nl" class="overscroll-x-none [overflow-x:clip]">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christmas at the Great Hall | Chamber of Secrets</title>
+    <link rel="icon" href="./favicon.ico">
+    <link rel="stylesheet" href="./css/main.css">
+    <script src="./js/smooth-scroll.js" defer></script>
+</head>
+
+<body
+    class="relative max-h-dvh touch-pan-y overscroll-x-none [overflow-x:clip] overflow-y-hidden bg-neutral-950 font-serif text-amber-50 antialiased">
+    <audio id="background-audio" preload="auto" loop autoplay>
+        <source src="./assets/music/arrival-of-baby-harry.mp3" type="audio/mp3">
+    </audio>
+
+    <div id="sorting-backdrop" aria-hidden="true"
+        class="burnt-paper-bg pointer-events-none fixed inset-0 z-0 origin-center bg-[url('../assets/images/chamber-of-secrets.png')] bg-cover bg-center bg-no-repeat animate-fadeIn1800">
+    </div>
+    <div id="sorting-backdrop-house" aria-hidden="true"
+        class="burnt-paper-bg pointer-events-none fixed inset-0 z-[1] origin-center bg-cover bg-center bg-no-repeat animate-fadeIn1800">
+    </div>
+    <div id="sorting-overlay" aria-hidden="true"
+        class="pointer-events-none fixed inset-0 z-[1] bg-gradient-to-b from-transparent via-black/70 to-black animate-fadeIn1800">
+    </div>
+
+    </main>
+
+</body>
+
+</html>

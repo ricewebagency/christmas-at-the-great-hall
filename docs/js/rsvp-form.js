@@ -92,11 +92,35 @@ function initRsvpFormSubmission() {
         return;
     }
 
+    const choiceButtons = Array.from(form.querySelectorAll('.attendance-choice'));
     const responseInput = form.querySelector('#attendance-response');
     const submitButton = form.querySelector('button[type="submit"]');
     const rsvpRoot = document.getElementById('rsvp-root') || document;
     const burntPaper = document.querySelector('.burnt-paper-fade-out');
     let isSubmitting = false;
+
+    const setActiveChoice = (activeChoice) => {
+        choiceButtons.forEach((button) => {
+            button.classList.add('opacity-45');
+            button.classList.remove('opacity-100');
+        });
+
+        if (activeChoice instanceof HTMLButtonElement) {
+            activeChoice.classList.remove('opacity-45');
+            activeChoice.classList.add('opacity-100');
+        }
+    };
+
+    choiceButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!isSubmitting) {
+                if (responseInput instanceof HTMLInputElement) {
+                    responseInput.value = button.dataset.attendanceChoice || '';
+                }
+                setActiveChoice(button);
+            }
+        });
+    });
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -105,13 +129,15 @@ function initRsvpFormSubmission() {
             return;
         }
 
-        if (!responseInput || !(responseInput instanceof HTMLInputElement)) {
+        if (!(responseInput instanceof HTMLInputElement)) {
             return;
         }
 
         const attendanceResponse = responseInput.value.trim();
         if (!attendanceResponse) {
-            responseInput.focus();
+            if (choiceButtons[0] instanceof HTMLButtonElement) {
+                choiceButtons[0].focus();
+            }
             return;
         }
 
@@ -123,6 +149,10 @@ function initRsvpFormSubmission() {
 
         isSubmitting = true;
 
+        choiceButtons.forEach((button) => {
+            button.disabled = true;
+            button.classList.add('pointer-events-none');
+        });
         if (submitButton instanceof HTMLButtonElement) {
             submitButton.disabled = true;
             submitButton.classList.add('opacity-60', 'pointer-events-none');
@@ -138,6 +168,10 @@ function initRsvpFormSubmission() {
                 burntPaper.classList.remove('burnt-paper-fade-out');
             }
             window.dispatchEvent(new Event('reveal-sequence:start'));
+            choiceButtons.forEach((button) => {
+                button.disabled = false;
+                button.classList.remove('pointer-events-none');
+            });
             if (submitButton instanceof HTMLButtonElement) {
                 submitButton.disabled = false;
                 submitButton.classList.remove('opacity-60', 'pointer-events-none');

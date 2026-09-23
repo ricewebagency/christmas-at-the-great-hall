@@ -1,0 +1,17 @@
+{
+  "name": "Christmas at the Great Hall",
+  "short_name": "Great Hall",
+  "description": "An invitation to Christmas at the Great Hall.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1a120f",
+  "theme_color": "#1a120f",
+  "icons": [
+    {
+      "src": "./favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { sendSortingHouseResult } from './api-client.js';
+import { getInvitationData, sendSortingHouseResult } from './api-client.js';
 
 const STORAGE_KEY = 'magical-winter-banquet.sorting-hat';
 const HOUSE_ORDER = ['gryffindor', 'hufflepuff', 'ravenclaw', 'slytherin'];
@@ -34,11 +34,24 @@ const SORTING_HAT_FRAGMENT_SOURCES = [
     new URL('../assets/music/sorting-hat/mmm-okay.mp3', import.meta.url).href,
     new URL('../assets/music/sorting-hat/pick-your-next-one-wisely.mp3', import.meta.url).href,
     new URL('../assets/music/sorting-hat/very-well-then.mp3', import.meta.url).href,
-    new URL('../assets/music/sorting-hat/youre-almost-there.mp3', import.meta.url).href
+    new URL('../assets/music/sorting-hat/youre-almost-there.mp3', import.meta.url).href,
+    new URL('../assets/music/sorting-hat/okay.mp3', import.meta.url).href,
+    new URL('../assets/music/sorting-hat/mmm-its-becoming-clearer-now.mp3', import.meta.url).href,
+    new URL('../assets/music/sorting-hat/hmm-quite-revealing.mp3', import.meta.url).href,
+    new URL('../assets/music/sorting-hat/that-is-useful-to-know.mp3', import.meta.url).href,
+    new URL('../assets/music/sorting-hat/ha-just-as-I-thought.mp3', import.meta.url).href,
+    new URL('../assets/music/sorting-hat/mmm-unexpected.mp3', import.meta.url).href,
+    new URL('../assets/music/sorting-hat/yes-yes-i-had-a-feeling.mp3', import.meta.url).href
 ];
 const FIRST_SORTING_HAT_FRAGMENT_SOURCE = SORTING_HAT_FRAGMENT_SOURCES[0];
-const LAST_SORTING_HAT_FRAGMENT_SOURCE = SORTING_HAT_FRAGMENT_SOURCES[SORTING_HAT_FRAGMENT_SOURCES.length - 1];
-const SORTING_HAT_FRAGMENT_HISTORY_LIMIT = 10;
+const ALMOST_THERE_SORTING_HAT_FRAGMENT_SOURCE =
+    SORTING_HAT_FRAGMENT_SOURCES.find((source) => source.endsWith('/youre-almost-there.mp3')) ??
+    FIRST_SORTING_HAT_FRAGMENT_SOURCE;
+const RANDOM_SORTING_HAT_FRAGMENT_SOURCES = SORTING_HAT_FRAGMENT_SOURCES.filter(
+    (source) => source !== ALMOST_THERE_SORTING_HAT_FRAGMENT_SOURCE
+);
+const SORTING_QUESTION_COUNT = 15;
+const SORTING_HAT_FRAGMENT_HISTORY_LIMIT = SORTING_HAT_FRAGMENT_SOURCES.length;
 const QUESTION_TRANSITION_MS = 720;
 const SORTING_UI_DELAY_MS = 240;
 const SORTING_UI_STAGGER_MS = 90;
@@ -50,9 +63,13 @@ const SORTING_HAT_IMAGE_PULSE_MAX_MS = 400;
 const ANSWER_SORTING_HAT_IMAGE_PULSE_MIN_MS = 300;
 const ANSWER_SORTING_HAT_IMAGE_PULSE_MAX_MS = 800;
 const HOUSE_REVEAL_SORTING_HAT_IMAGE_PULSE_DURATION_MS = 1500;
+const CHAMBER_BUTTON_REVEAL_DELAY_MS = 2000;
 let nextAllowedAudioPlayAt = 0;
 let pendingAudioStart = Promise.resolve();
-const sortingHatSubtitlesPromise = fetch(SORTING_HAT_SUBTITLES_URL)
+
+const sortingHatSubtitlesPromise = fetch(SORTING_HAT_SUBTITLES_URL, {
+    cache: 'no-store'
+})
     .then(async (response) => {
         if (!response.ok) {
             throw new Error(`Failed to load sorting subtitles: ${response.status}`);
@@ -70,7 +87,7 @@ const sortingHatSubtitlesPromise = fetch(SORTING_HAT_SUBTITLES_URL)
 
         return new Map(
             data.flatMap((entry) => {
-                const fileName = typeof entry?.fileName === 'string' ? entry.fileName.trim() : '';
+                const fileName = normalizeAudioSourceName(entry?.fileName);
                 const sentences = Array.isArray(entry?.sentences)
                     ? entry.sentences
                         .map((sentence) => {
@@ -99,6 +116,22 @@ let activeSortingHatSubtitleSource = '';
 let sortingHatSubtitleSentenceTimeoutId = null;
 let sortingHatSubtitlePlaybackToken = 0;
 
+function normalizeAudioSourceName(value) {
+    const rawValue = typeof value === 'string' ? value.trim() : '';
+
+    if (!rawValue) {
+        return '';
+    }
+
+    const fileName = rawValue.split('/').pop() ?? '';
+
+    try {
+        return decodeURIComponent(fileName).trim().toLowerCase();
+    } catch {
+        return fileName.trim().toLowerCase();
+    }
+}
+
 function cancelSortingHatSubtitleSentencePlayback() {
     sortingHatSubtitlePlaybackToken += 1;
 
@@ -126,18 +159,8 @@ function showSortingHatSubtitleSentence(subtitleEl, sentences, sentenceIndex, pl
     }
 
     subtitleEl.textContent = sentence.text;
-    const isFirstSentence = sentenceIndex === 0;
     const isLastSentence = sentenceIndex >= sentences.length - 1;
-
-    if (isFirstSentence) {
-        window.requestAnimationFrame(() => {
-            window.requestAnimationFrame(() => {
-                setSortingHatSubtitleVisibility(subtitleEl, true);
-            });
-        });
-    } else {
-        setSortingHatSubtitleVisibility(subtitleEl, true);
-    }
+    setSortingHatSubtitleVisibility(subtitleEl, true);
 
     sortingHatSubtitleSentenceTimeoutId = window.setTimeout(() => {
         if (playbackToken !== sortingHatSubtitlePlaybackToken) {
@@ -163,9 +186,9 @@ function createEmptyScores() {
 
 function getAudioSourceName(source) {
     try {
-        return new URL(source, window.location.href).pathname.split('/').pop() ?? '';
+        return normalizeAudioSourceName(new URL(source, window.location.href).pathname);
     } catch {
-        return source.split('/').pop() ?? '';
+        return normalizeAudioSourceName(source);
     }
 }
 
@@ -191,21 +214,6 @@ async function showSortingHatSubtitleForSource(source) {
     const startSubtitleSequence = () => {
         showSortingHatSubtitleSentence(subtitleEl, subtitleSentences, 0, playbackToken);
     };
-
-    if (subtitleEl.textContent !== '' && !subtitleEl.classList.contains('opacity-0')) {
-        subtitleEl.classList.remove('opacity-70');
-        subtitleEl.classList.add('opacity-0');
-
-        window.setTimeout(() => {
-            if (playbackToken !== sortingHatSubtitlePlaybackToken) {
-                return;
-            }
-
-            startSubtitleSequence();
-        }, SORTING_HAT_SUBTITLE_FADE_MS);
-
-        return;
-    }
 
     startSubtitleSequence();
 }
@@ -351,7 +359,7 @@ function createAnswerCarousel(answers, onSubmitAnswer) {
     const dots = answers.map((_, index) => {
         const dot = document.createElement('button');
         dot.type = 'button';
-        dot.className = 'h-2 w-2 rounded-full border border-amber-100/70 bg-transparent transition-colors duration-200';
+        dot.className = 'h-1.5 w-1.5 rounded-full bg-amber-100/45 transition-all duration-200';
         dot.setAttribute('aria-label', `Go to answer ${index + 1}`);
         dot.addEventListener('click', () => {
             selectedAnswerIndex = index;
@@ -370,7 +378,11 @@ function createAnswerCarousel(answers, onSubmitAnswer) {
         dots.forEach((dot, index) => {
             const isActive = index === selectedAnswerIndex;
             dot.classList.toggle('bg-amber-100', isActive);
-            dot.classList.toggle('bg-transparent', !isActive);
+            dot.classList.toggle('bg-amber-100/45', !isActive);
+            dot.classList.toggle('h-2', isActive);
+            dot.classList.toggle('w-2', isActive);
+            dot.classList.toggle('h-1.5', !isActive);
+            dot.classList.toggle('w-1.5', !isActive);
             dot.setAttribute('aria-current', isActive ? 'true' : 'false');
         });
     };
@@ -399,7 +411,7 @@ function createAnswerCarousel(answers, onSubmitAnswer) {
         slide.className = 'group h-full w-full shrink-0 text-left';
 
         const copy = document.createElement('div');
-        copy.className = 'flex h-full items-center justify-center py-4 px-2 text-center font-inkpot text-lg leading-relaxed text-amber-50/92 transition-colors duration-200 group-hover:text-amber-50 sm:px-8 sm:text-xl';
+        copy.className = 'flex h-full items-center justify-center py-4 px-4 text-center font-inkpot text-lg leading-relaxed text-amber-50/92 transition-colors duration-200 group-hover:text-amber-50 sm:px-8 sm:text-xl';
         copy.textContent = answer.text;
 
         slide.appendChild(copy);
@@ -487,25 +499,25 @@ function pickRandomQuestions(questions, count) {
 
 function getRandomSortingHatFragmentSource(recentSources) {
     const recentSourceSet = new Set(recentSources);
-    const availableSources = SORTING_HAT_FRAGMENT_SOURCES.filter((source) => !recentSourceSet.has(source));
+    const sourcePool =
+        RANDOM_SORTING_HAT_FRAGMENT_SOURCES.length > 0
+            ? RANDOM_SORTING_HAT_FRAGMENT_SOURCES
+            : [FIRST_SORTING_HAT_FRAGMENT_SOURCE];
+    const availableSources = sourcePool.filter((source) => !recentSourceSet.has(source));
 
     if (recentSourceSet.size === 0) {
         return FIRST_SORTING_HAT_FRAGMENT_SOURCE;
     }
 
     if (availableSources.length === 0) {
-        return LAST_SORTING_HAT_FRAGMENT_SOURCE;
+        const fallbackPool = sourcePool.length > 0 ? sourcePool : [FIRST_SORTING_HAT_FRAGMENT_SOURCE];
+        const randomIndex = Math.floor(Math.random() * fallbackPool.length);
+        return fallbackPool[randomIndex] ?? FIRST_SORTING_HAT_FRAGMENT_SOURCE;
     }
 
-    if (availableSources.length === 1) {
-        return availableSources[0];
-    }
+    const randomIndex = Math.floor(Math.random() * availableSources.length);
 
-    const pool = availableSources.filter((source) => source !== LAST_SORTING_HAT_FRAGMENT_SOURCE);
-    const finalPool = pool.length > 0 ? pool : availableSources;
-    const randomIndex = Math.floor(Math.random() * finalPool.length);
-
-    return finalPool[randomIndex];
+    return availableSources[randomIndex];
 }
 
 function createAudio(source, volume = 0.95) {
@@ -543,6 +555,40 @@ function createAudioPlaybackError(error) {
     }
 
     return new Error('Audio playback failed.');
+}
+
+function playHogwartsMarchBackgroundAudio() {
+    const audio = document.getElementById('background-audio');
+
+    if (!(audio instanceof HTMLAudioElement)) {
+        return;
+    }
+
+    const hogwartsMarchSource = './assets/music/hogwarts-march.mp3';
+    const currentSource = audio.currentSrc || audio.getAttribute('src') || '';
+    const sourceElement = audio.querySelector('source[src]');
+    const isAlreadyPlayingHogwartsMarch = currentSource.includes('/hogwarts-march.mp3');
+
+    audio.pause();
+
+    if (sourceElement instanceof HTMLSourceElement) {
+        sourceElement.src = hogwartsMarchSource;
+    } else {
+        audio.src = hogwartsMarchSource;
+    }
+
+    if (!isAlreadyPlayingHogwartsMarch) {
+        audio.currentTime = 0;
+    }
+
+    audio.muted = false;
+    audio.load();
+
+    void audio.play().then(() => {
+        window.audioIsEnabled = true;
+    }).catch((error) => {
+        console.info('Hogwarts March autoplay was blocked by the browser.', error);
+    });
 }
 
 function playAudioAndWait(audio) {
@@ -594,7 +640,9 @@ function resetStoredState() {
 }
 
 async function loadQuestions() {
-    const response = await fetch(QUESTIONS_URL);
+    const response = await fetch(QUESTIONS_URL, {
+        cache: 'no-store'
+    });
 
     if (!response.ok) {
         throw new Error(`Failed to load sorting questions: ${response.status}`);
@@ -646,15 +694,20 @@ function initSortingQuiz() {
     let hasSentResult = false;
     let isTransitioning = false;
     let hasStarted = false;
+    let currentGuestName = '';
     let playedSortingHatFragments = [];
     let activeSortingHatFragments = new Set();
     let sortingHatFragmentPlaybackToken = 0;
     let revealHouseButton = null;
+    let chamberButton = null;
     let pendingRevealHouse = null;
     let houseRevealAudio = null;
     let houseRevealLocked = false;
+    let chamberNavigationLocked = false;
+    let chamberButtonRevealTimer = null;
     let houseRevealHatImagePulseTimer = null;
     let houseRevealFinalizationTimer = null;
+    let houseBackdropRevealFrameId = null;
 
     function startSortingFlow() {
         if (hasStarted) {
@@ -679,7 +732,7 @@ function initSortingQuiz() {
 
         void loadQuestions()
             .then((data) => {
-                questions = pickRandomQuestions(data.questions, 10);
+                questions = pickRandomQuestions(data.questions, SORTING_QUESTION_COUNT);
                 const state = resetStoredState();
                 currentQuestionIndex = state.currentQuestionIndex;
                 scores = state.scores;
@@ -740,6 +793,15 @@ function initSortingQuiz() {
         });
     }
 
+    async function hydrateCurrentGuestName() {
+        try {
+            const invitationData = await getInvitationData();
+            currentGuestName = typeof invitationData?.guestName === 'string' ? invitationData.guestName.trim() : '';
+        } catch {
+            currentGuestName = '';
+        }
+    }
+
     function resetSortingHatFragments() {
         sortingHatFragmentPlaybackToken += 1;
 
@@ -763,6 +825,13 @@ function initSortingQuiz() {
         if (houseRevealFinalizationTimer !== null) {
             window.clearTimeout(houseRevealFinalizationTimer);
             houseRevealFinalizationTimer = null;
+        }
+    }
+
+    function stopHouseBackdropRevealFrame() {
+        if (houseBackdropRevealFrameId !== null) {
+            window.cancelAnimationFrame(houseBackdropRevealFrameId);
+            houseBackdropRevealFrameId = null;
         }
     }
 
@@ -801,9 +870,54 @@ function initSortingQuiz() {
             return;
         }
 
-        houseBackdropEl.classList.remove('opacity-100');
+        stopHouseBackdropRevealFrame();
+
+        houseBackdropEl.style.opacity = '';
+        houseBackdropEl.classList.remove('opacity-50', 'opacity-100');
         houseBackdropEl.classList.add('opacity-0');
         houseBackdropEl.style.backgroundImage = 'none';
+    }
+
+    function setSortingOverlayHalfVisible() {
+        const sortingOverlayEl = document.getElementById('sorting-overlay');
+
+        if (!(sortingOverlayEl instanceof HTMLElement)) {
+            return;
+        }
+
+        // Freeze current visual opacity first, then tween smoothly to 50%.
+        const currentOpacity = window.getComputedStyle(sortingOverlayEl).opacity || '1';
+        sortingOverlayEl.style.opacity = currentOpacity;
+        sortingOverlayEl.style.animationName = 'none';
+        sortingOverlayEl.style.animationDuration = '700ms';
+        sortingOverlayEl.style.animationTimingFunction = 'ease-out';
+        sortingOverlayEl.style.animationFillMode = 'forwards';
+        sortingOverlayEl.style.transitionProperty = 'opacity';
+        sortingOverlayEl.style.transitionDuration = '700ms';
+        sortingOverlayEl.style.transitionTimingFunction = 'ease-out';
+        sortingOverlayEl.classList.remove('opacity-0', 'opacity-100');
+        sortingOverlayEl.classList.add('opacity-50');
+
+        // Force a layout flush so the next opacity update transitions instead of snapping.
+        void sortingOverlayEl.offsetWidth;
+
+        window.requestAnimationFrame(() => {
+            sortingOverlayEl.style.opacity = '0.5';
+        });
+    }
+
+    function setHouseResultBackdropHalfVisible() {
+        const houseBackdropEl = document.getElementById('sorting-backdrop-house');
+
+        if (!(houseBackdropEl instanceof HTMLElement)) {
+            return;
+        }
+
+        stopHouseBackdropRevealFrame();
+
+        houseBackdropEl.classList.remove('opacity-0', 'opacity-50');
+        houseBackdropEl.classList.add('opacity-100');
+        houseBackdropEl.style.opacity = '1';
     }
 
     function setHouseResultBackdrop(house) {
@@ -813,15 +927,108 @@ function initSortingQuiz() {
             return;
         }
 
+        stopHouseBackdropRevealFrame();
+
         const houseBackgroundSource = `./assets/images/the-great-hall-${house}.png`;
         houseBackdropEl.style.backgroundImage = `url("${houseBackgroundSource}")`;
-        houseBackdropEl.classList.remove('opacity-100');
+        houseBackdropEl.style.opacity = '';
+        houseBackdropEl.classList.remove('opacity-50', 'opacity-100');
         houseBackdropEl.classList.add('opacity-0');
 
-        window.requestAnimationFrame(() => {
+        houseBackdropRevealFrameId = window.requestAnimationFrame(() => {
             houseBackdropEl.classList.remove('opacity-0');
             houseBackdropEl.classList.add('opacity-100');
+            houseBackdropRevealFrameId = null;
         });
+    }
+
+    function handleChamberButtonClick() {
+        if (chamberNavigationLocked) {
+            return;
+        }
+
+        chamberNavigationLocked = true;
+
+        const bodyEl = document.querySelector('body');
+
+        if (!(bodyEl instanceof HTMLElement)) {
+            window.location.href = './chamber';
+            return;
+        }
+
+        const currentOpacity = window.getComputedStyle(bodyEl).opacity || '1';
+        bodyEl.style.opacity = currentOpacity;
+        bodyEl.style.transitionProperty = 'opacity';
+        bodyEl.style.transitionDuration = '1000ms';
+        bodyEl.style.transitionTimingFunction = 'ease-out';
+
+        void bodyEl.offsetWidth;
+
+        window.requestAnimationFrame(() => {
+            bodyEl.style.opacity = '0';
+        });
+
+        window.setTimeout(() => {
+            window.location.href = './chamber';
+        }, 1050);
+    }
+
+    function showChamberButton() {
+        if (chamberButton) {
+            chamberButton.remove();
+        }
+
+        chamberButton = document.createElement('button');
+        chamberButton.type = 'button';
+        chamberButton.className = 'mx-auto !mt-16 inline-flex w-auto max-w-full cursor-pointer appearance-none border-0 bg-transparent p-0 text-center font-inkpot text-base text-amber-50/80 transition-colors duration-200 hover:opacity-80 focus:outline-none focus-visible:outline-none sm:text-lg';
+        chamberButton.textContent = 'To the chamber of secrets \u2192';
+        chamberButton.addEventListener('click', handleChamberButtonClick);
+        chamberButton.style.opacity = '0';
+        chamberButton.style.transition = 'opacity 1400ms ease-out';
+
+        const insertionParent = resultHouseEl.parentElement;
+
+        if (insertionParent) {
+            insertionParent.insertBefore(chamberButton, resultHouseEl.nextSibling);
+        } else {
+            resultEl.appendChild(chamberButton);
+        }
+
+        const nextChamberButton = chamberButton;
+        window.requestAnimationFrame(() => {
+            if (chamberButton !== nextChamberButton) {
+                return;
+            }
+
+            chamberButton.style.opacity = '1';
+        });
+    }
+
+    function scheduleChamberButtonReveal() {
+        if (chamberButtonRevealTimer !== null) {
+            window.clearTimeout(chamberButtonRevealTimer);
+        }
+
+        chamberButtonRevealTimer = window.setTimeout(() => {
+            showChamberButton();
+            chamberButtonRevealTimer = null;
+        }, CHAMBER_BUTTON_REVEAL_DELAY_MS);
+    }
+
+    function resetChamberButton() {
+        chamberNavigationLocked = false;
+
+        if (chamberButtonRevealTimer !== null) {
+            window.clearTimeout(chamberButtonRevealTimer);
+            chamberButtonRevealTimer = null;
+        }
+
+        if (!chamberButton) {
+            return;
+        }
+
+        chamberButton.remove();
+        chamberButton = null;
     }
 
     function resetHouseRevealState() {
@@ -836,6 +1043,7 @@ function initSortingQuiz() {
         houseRevealAudio = null;
         houseRevealLocked = false;
         pendingRevealHouse = null;
+        resetChamberButton();
 
         if (revealHouseButton) {
             revealHouseButton.remove();
@@ -877,16 +1085,20 @@ function initSortingQuiz() {
     function revealHouseResult(house) {
         const source = getRevealHouseAudio(house, 'second');
 
+        playHogwartsMarchBackgroundAudio();
         triggerSortingHatImagePulse(HOUSE_REVEAL_SORTING_HAT_IMAGE_PULSE_DURATION_MS);
         setHouseResultBackdrop(house);
 
         const finalizeReveal = () => {
+            setHouseResultBackdropHalfVisible();
+            setSortingOverlayHalfVisible();
             resultEl.style.animation = 'none';
             resultEl.classList.remove('hidden', 'opacity-0');
             resultEl.classList.add('opacity-100');
             optionsEl.innerHTML = '';
             resultHouseEl.textContent = `${formatHouseName(house)}!`;
             resultHouseEl.classList.add('text-center');
+            scheduleChamberButtonReveal();
             resultCopyEl.classList.add('hidden');
             resultCopyEl.textContent = '';
             restartButton.classList.add('hidden');
@@ -895,6 +1107,7 @@ function initSortingQuiz() {
                 hasSentResult = true;
 
                 void sendSortingHouseResult({
+                    guestName: currentGuestName,
                     house,
                     scores: { ...scores },
                     questionsAnswered: questions.length
@@ -969,7 +1182,7 @@ function initSortingQuiz() {
         }
     }
 
-    function playSortingHatFragment() {
+    function playSortingHatFragment(forcedSource = null) {
         sortingHatFragmentPlaybackToken += 1;
         const playbackToken = sortingHatFragmentPlaybackToken;
 
@@ -980,7 +1193,7 @@ function initSortingQuiz() {
 
         activeSortingHatFragments.clear();
 
-        const source = getRandomSortingHatFragmentSource(playedSortingHatFragments);
+        const source = forcedSource ?? getRandomSortingHatFragmentSource(playedSortingHatFragments);
         const audio = createAudio(source);
         activeSortingHatFragments.add(audio);
 
@@ -1052,7 +1265,9 @@ function initSortingQuiz() {
         persistState();
 
         if (currentQuestionIndex < questions.length) {
-            playSortingHatFragment();
+            const shouldForceAlmostThere = currentQuestionIndex === questions.length - 2;
+            const forcedSource = shouldForceAlmostThere ? ALMOST_THERE_SORTING_HAT_FRAGMENT_SOURCE : null;
+            playSortingHatFragment(forcedSource);
         }
 
         void renderQuestion();
@@ -1167,6 +1382,7 @@ function initSortingQuiz() {
     });
 
     audioEnableButton.addEventListener('click', startSortingFlow);
+    void hydrateCurrentGuestName();
     attemptAutoStartSortingFlow();
 }
 

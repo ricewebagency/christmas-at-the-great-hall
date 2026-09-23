@@ -33,6 +33,10 @@ module.exports = {
           "0%": { opacity: "0", transform: "translate3d(0, -8px, 0)" },
           "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
         },
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
         marquee: {
           from: { transform: "translateX(0%)" },
           to: { transform: "translateX(-50%)" },
@@ -176,6 +180,10 @@ module.exports = {
         fadeInUp900: "fadeInUp 0.9s ease-out 0.9s both",
         fadeInUp1100: "fadeInUp 0.9s ease-out 0.9s both",
         fadeInDown: "fadeInDown 0.6s ease-out both",
+        fadeIn: "fadeIn 1.2s ease-out both",
+        fadeIn200: "fadeIn 1.2s ease-out 0.2s both",
+        fadeIn800: "fadeIn 1.2s ease-out 0.8s both",
+        fadeIn1800: "fadeIn 1.8s ease-out both",
         marquee: "marquee 30s linear infinite",
         spinSlow: "spinSlow 60s linear infinite",
         loadingFadeOut: "loadingFadeOut 0.4s ease-out 0.5s forwards",
