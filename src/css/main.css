@@ -48,6 +48,11 @@
 	}
 }
 
+[data-train-shake] {
+	transform-origin: center center;
+	will-change: transform;
+}
+
 @layer utilities {
 	.burnt-paper-fade-out {
 		opacity: 1;

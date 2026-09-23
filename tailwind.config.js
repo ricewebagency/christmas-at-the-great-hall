@@ -49,6 +49,10 @@ module.exports = {
           "0%": { opacity: "1" },
           "100%": { opacity: "0" },
         },
+        screenLoaderSwipeUp: {
+          "0%": { transform: "translate3d(0, 0, 0)" },
+          "100%": { transform: "translate3d(0, -100%, 0)" },
+        },
         logoSwapA: {
           "0%": { transform: "translateX(0)" },
           "18.75%": { transform: "translateX(0)" },
@@ -184,9 +188,11 @@ module.exports = {
         fadeIn200: "fadeIn 1.2s ease-out 0.2s both",
         fadeIn800: "fadeIn 1.2s ease-out 0.8s both",
         fadeIn1800: "fadeIn 1.8s ease-out both",
+        fadeIn1000: "fadeIn 1.0s ease-out both",
         marquee: "marquee 30s linear infinite",
         spinSlow: "spinSlow 60s linear infinite",
         loadingFadeOut: "loadingFadeOut 0.4s ease-out 0.5s forwards",
+        screenLoaderSwipeUp: "screenLoaderSwipeUp 2.4s ease-in-out both",
         logoSwapA: "logoSwapA 16s ease-in-out infinite",
         logoSwapB: "logoSwapB 16s ease-in-out infinite",
         logoEdgeLeft: "logoEdgeLeft 16s ease-in-out infinite",

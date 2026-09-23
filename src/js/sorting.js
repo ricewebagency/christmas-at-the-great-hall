@@ -50,7 +50,7 @@ const ALMOST_THERE_SORTING_HAT_FRAGMENT_SOURCE =
 const RANDOM_SORTING_HAT_FRAGMENT_SOURCES = SORTING_HAT_FRAGMENT_SOURCES.filter(
     (source) => source !== ALMOST_THERE_SORTING_HAT_FRAGMENT_SOURCE
 );
-const SORTING_QUESTION_COUNT = 15;
+const SORTING_QUESTION_COUNT = 1;
 const SORTING_HAT_FRAGMENT_HISTORY_LIMIT = SORTING_HAT_FRAGMENT_SOURCES.length;
 const QUESTION_TRANSITION_MS = 720;
 const SORTING_UI_DELAY_MS = 240;
@@ -952,7 +952,7 @@ function initSortingQuiz() {
         const bodyEl = document.querySelector('body');
 
         if (!(bodyEl instanceof HTMLElement)) {
-            window.location.href = './chamber';
+            window.location.href = './cabin';
             return;
         }
 
@@ -969,7 +969,7 @@ function initSortingQuiz() {
         });
 
         window.setTimeout(() => {
-            window.location.href = './chamber';
+            window.location.href = './cabin';
         }, 1050);
     }
 
@@ -981,7 +981,7 @@ function initSortingQuiz() {
         chamberButton = document.createElement('button');
         chamberButton.type = 'button';
         chamberButton.className = 'mx-auto !mt-16 inline-flex w-auto max-w-full cursor-pointer appearance-none border-0 bg-transparent p-0 text-center font-inkpot text-base text-amber-50/80 transition-colors duration-200 hover:opacity-80 focus:outline-none focus-visible:outline-none sm:text-lg';
-        chamberButton.textContent = 'To the chamber of secrets \u2192';
+        chamberButton.textContent = 'Go to the Hogwarts Express \u2192';
         chamberButton.addEventListener('click', handleChamberButtonClick);
         chamberButton.style.opacity = '0';
         chamberButton.style.transition = 'opacity 1400ms ease-out';
