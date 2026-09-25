@@ -28,17 +28,17 @@
     </div>
 
     <div aria-hidden="true"
-        class="max-h-dvh pointer-events-none fixed inset-0 z-[-1] origin-center bg-cover bg-center bg-no-repeat animate-fadeIn1000"
+        class="max-h-dvh pointer-events-none fixed inset-0 z-[-1] origin-center bg-cover bg-center bg-no-repeat [overflow-clip-margin:unset] animate-fadeIn1000"
         style="background-image: url('./assets/images/hogwarts-express-cabin-background.png');">
     </div>
 
     <div data-train-shake aria-hidden="true"
-        class="max-h-dvh pointer-events-none fixed inset-0 z-0 origin-center bg-cover bg-center bg-no-repeat"
+        class="max-h-dvh pointer-events-none fixed inset-0 z-0 origin-center bg-cover bg-center bg-no-repeat [overflow-clip-margin:unset]"
         style="background-image: url('./assets/images/hogwarts-express-cabin.png');">
     </div>
 
     <div data-cabin-backdrop aria-hidden="true"
-        class="max-h-dvh pointer-events-none fixed inset-0 z-[3] origin-center bg-cover bg-center bg-no-repeat"
+        class="max-h-dvh pointer-events-none fixed inset-0 z-[3] origin-center bg-cover bg-center bg-no-repeat [overflow-clip-margin:unset]"
         style="background-image: url('./assets/images/hogwarts-express-cabin-front-gryffindor.png');">
     </div>
 
@@ -49,6 +49,12 @@
     <img data-trolley-witch src="./assets/images/trolley-witch.png" alt=""
         class="pointer-events-none fixed right-0 top-1/2 z-[2] w-[min(100vw,46rem)] -translate-y-1/2 translate-x-full transition-transform duration-[4000ms] ease-out md:w-[min(58vw,56rem)]"
         aria-hidden="true">
+
+    <div class="pointer-events-none fixed inset-x-0 bottom-[100px] z-[5] px-4">
+        <p data-trolley-subtitles
+            class="mx-auto mt-4 max-w-3xl text-center font-inkpot text-base leading-relaxed text-white opacity-0 transition-opacity duration-300 ease-out drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)] sm:text-lg"
+            aria-live="polite" aria-atomic="true"></p>
+    </div>
 
     <div data-parchment-container
         class="pointer-events-none fixed inset-0 z-[6] hidden items-center justify-center opacity-0">
@@ -67,16 +73,16 @@
                         <p data-parchment-reveal
                             class="text-sm leading-relaxed opacity-0 animate-fadeIn1800 sm:text-base"
                             style="animation-delay: 300ms;">
-                            As is customary for the Christmas Feast, each student is kindly requested to contribute one,
-                            or at most two, dishes to the evening's banquet.
+                            As is customary for the Christmas Feast, each attendee is kindly requested to contribute a
+                            dish, or at most two, to the Christmas Feast.
                         </p>
 
                         <p data-parchment-reveal
                             class="text-sm leading-relaxed opacity-0 animate-fadeIn1800 sm:text-base"
                             style="animation-delay: 300ms;">
                             Make your selection from the list on the next page and be sure to submit it in good time.
-                            The
-                            house-elves have quite enough to contend with at Christmas without last-minute surprises.
+                            The house-elves have quite enough to contend with at Christmas without last-minute
+                            surprises.
                         </p>
                     </div>
 
@@ -96,75 +102,75 @@
 
                         <div data-dish-choice-list
                             class="grid grid-cols-1 gap-x-5 gap-y-2 text-sm leading-tight sm:grid-cols-2 sm:text-base">
-                            <button type="button" data-dish-choice="butterscotch-pie"
+                            <button type="button" data-dish-choice="kale-mash-with-smoked-sausage"
                                 class="group inline-flex items-start gap-2 text-left opacity-70 transition-opacity duration-200 hover:opacity-100 focus:outline-none focus-visible:outline-none">
                                 <span class="transition-opacity duration-200 group-aria-pressed:opacity-100">1.</span>
                                 <span
-                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Butterscotch
-                                    pie</span>
+                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Kale
+                                    mash with smoked sausage</span>
                             </button>
-                            <button type="button" data-dish-choice="roasted-pumpkin-soup"
+                            <button type="button" data-dish-choice="split-pea-soup"
                                 class="group inline-flex items-start gap-2 text-left opacity-70 transition-opacity duration-200 hover:opacity-100 focus:outline-none focus-visible:outline-none">
                                 <span class="transition-opacity duration-200 group-aria-pressed:opacity-100">2.</span>
                                 <span
-                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Roasted
-                                    pumpkin soup</span>
+                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Split
+                                    pea soup</span>
                             </button>
-                            <button type="button" data-dish-choice="herb-roast-potatoes"
+                            <button type="button" data-dish-choice="dutch-beef-stew"
                                 class="group inline-flex items-start gap-2 text-left opacity-70 transition-opacity duration-200 hover:opacity-100 focus:outline-none focus-visible:outline-none">
                                 <span class="transition-opacity duration-200 group-aria-pressed:opacity-100">3.</span>
                                 <span
-                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Herb-roast
-                                    potatoes</span>
+                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Dutch
+                                    beef stew</span>
                             </button>
-                            <button type="button" data-dish-choice="winter-green-salad"
+                            <button type="button" data-dish-choice="herring-on-brown-bread"
                                 class="group inline-flex items-start gap-2 text-left opacity-70 transition-opacity duration-200 hover:opacity-100 focus:outline-none focus-visible:outline-none">
                                 <span class="transition-opacity duration-200 group-aria-pressed:opacity-100">4.</span>
                                 <span
-                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Winter
-                                    green salad</span>
+                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Herring
+                                    on brown bread</span>
                             </button>
-                            <button type="button" data-dish-choice="mulled-berry-crumble"
+                            <button type="button" data-dish-choice="stuffed-roast-chicken"
                                 class="group inline-flex items-start gap-2 text-left opacity-70 transition-opacity duration-200 hover:opacity-100 focus:outline-none focus-visible:outline-none">
                                 <span class="transition-opacity duration-200 group-aria-pressed:opacity-100">5.</span>
                                 <span
-                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Mulled
-                                    berry crumble</span>
+                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Stuffed
+                                    roast chicken</span>
                             </button>
-                            <button type="button" data-dish-choice="spiced-apple-cider"
+                            <button type="button" data-dish-choice="roasted-cauliflower-with-cheese-sauce"
                                 class="group inline-flex items-start gap-2 text-left opacity-70 transition-opacity duration-200 hover:opacity-100 focus:outline-none focus-visible:outline-none">
                                 <span class="transition-opacity duration-200 group-aria-pressed:opacity-100">6.</span>
                                 <span
-                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Spiced
-                                    apple cider</span>
+                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Roasted
+                                    cauliflower with cheese sauce</span>
                             </button>
-                            <button type="button" data-dish-choice="toffee-tart"
+                            <button type="button" data-dish-choice="braised-red-cabbage-with-apples"
                                 class="group inline-flex items-start gap-2 text-left opacity-70 transition-opacity duration-200 hover:opacity-100 focus:outline-none focus-visible:outline-none">
                                 <span class="transition-opacity duration-200 group-aria-pressed:opacity-100">7.</span>
                                 <span
-                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Toffee
-                                    tart</span>
+                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Braised
+                                    red cabbage with apples</span>
                             </button>
-                            <button type="button" data-dish-choice="roasted-brussels-sprouts"
+                            <button type="button" data-dish-choice="dutch-cheese-board"
                                 class="group inline-flex items-start gap-2 text-left opacity-70 transition-opacity duration-200 hover:opacity-100 focus:outline-none focus-visible:outline-none">
                                 <span class="transition-opacity duration-200 group-aria-pressed:opacity-100">8.</span>
                                 <span
-                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Roasted
-                                    Brussels sprouts</span>
+                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Dutch
+                                    cheese board</span>
                             </button>
-                            <button type="button" data-dish-choice="honey-glazed-carrots"
+                            <button type="button" data-dish-choice="boiled-potatoes-with-gravy"
                                 class="group inline-flex items-start gap-2 text-left opacity-70 transition-opacity duration-200 hover:opacity-100 focus:outline-none focus-visible:outline-none">
                                 <span class="transition-opacity duration-200 group-aria-pressed:opacity-100">9.</span>
                                 <span
-                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Honey-glazed
-                                    carrots</span>
+                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Boiled
+                                    potatoes with gravy</span>
                             </button>
-                            <button type="button" data-dish-choice="mince-pies"
+                            <button type="button" data-dish-choice="dutch-apple-pie"
                                 class="group inline-flex items-start gap-2 text-left opacity-70 transition-opacity duration-200 hover:opacity-100 focus:outline-none focus-visible:outline-none">
                                 <span class="transition-opacity duration-200 group-aria-pressed:opacity-100">10.</span>
                                 <span
-                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Mince
-                                    pies</span>
+                                    class="transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4">Dutch
+                                    apple pie</span>
                             </button>
                         </div>
                     </div>

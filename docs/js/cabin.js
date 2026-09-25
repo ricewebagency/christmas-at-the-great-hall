@@ -5,6 +5,7 @@ const BACKDROP_SELECTOR = '[data-cabin-backdrop]';
 const ARRIVAL_AUDIO_SELECTOR = '[data-arrival-audio]';
 const TROLLEY_AUDIO_SELECTOR = '[data-trolley-audio]';
 const TROLLEY_IMAGE_SELECTOR = '[data-trolley-witch]';
+const TROLLEY_SUBTITLE_SELECTOR = '[data-trolley-subtitles]';
 const PARCHMENT_SELECTOR = '[data-parchment-container]';
 const PARCHMENT_REVEAL_SELECTOR = '[data-parchment-reveal]';
 const SCREEN_LOADER_SELECTOR = '[data-screen-loader]';
@@ -19,6 +20,169 @@ const DISH_SELECTION_LIMIT = 2;
 const CABIN_CONFIRM_REDIRECT_PATH = './chamber';
 const CABIN_EXIT_FADE_DURATION_MS = 1300;
 const CABIN_SCREEN_LOADER_DURATION_MS = 2200;
+const TROLLEY_SUBTITLE_FADE_MS = 300;
+const TROLLEY_SUBTITLES_URL = new URL('../assets/files/trolley-witch-subtitles.json', import.meta.url);
+
+const trolleySubtitlesPromise = fetch(TROLLEY_SUBTITLES_URL, {
+    cache: 'no-store'
+})
+    .then(async (response) => {
+        if (!response.ok) {
+            throw new Error(`Failed to load trolley subtitles: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const entries = Array.isArray(data) ? data : [data];
+
+        return new Map(
+            entries.flatMap((entry) => {
+                const fileName = normalizeAudioSourceName(entry?.fileName);
+                const sentences = Array.isArray(entry?.sentences)
+                    ? entry.sentences
+                        .map((sentence) => {
+                            const text = typeof sentence?.text === 'string' ? sentence.text.trim() : '';
+                            const durationMs = Number(sentence?.durationMs);
+
+                            if (!text || !Number.isFinite(durationMs) || durationMs < 0) {
+                                return null;
+                            }
+
+                            return { text, durationMs };
+                        })
+                        .filter(Boolean)
+                    : [];
+
+                if (!fileName || sentences.length === 0) {
+                    return [];
+                }
+
+                return [[fileName, sentences]];
+            })
+        );
+    })
+    .catch(() => new Map());
+
+let activeTrolleySubtitleSource = '';
+let trolleySubtitleSentenceTimeoutId = null;
+let trolleySubtitlePlaybackToken = 0;
+
+function normalizeAudioSourceName(value) {
+    const rawValue = typeof value === 'string' ? value.trim() : '';
+
+    if (!rawValue) {
+        return '';
+    }
+
+    const fileName = rawValue.split('/').pop() ?? '';
+
+    try {
+        return decodeURIComponent(fileName).trim().toLowerCase();
+    } catch {
+        return fileName.trim().toLowerCase();
+    }
+}
+
+function getAudioSourceName(source) {
+    try {
+        return normalizeAudioSourceName(new URL(source, window.location.href).pathname);
+    } catch {
+        return normalizeAudioSourceName(source);
+    }
+}
+
+function cancelTrolleySubtitleSentencePlayback() {
+    trolleySubtitlePlaybackToken += 1;
+
+    if (trolleySubtitleSentenceTimeoutId !== null) {
+        window.clearTimeout(trolleySubtitleSentenceTimeoutId);
+        trolleySubtitleSentenceTimeoutId = null;
+    }
+}
+
+function setTrolleySubtitleVisibility(subtitleEl, isVisible) {
+    subtitleEl.classList.toggle('opacity-0', !isVisible);
+    subtitleEl.classList.toggle('opacity-70', isVisible);
+}
+
+function showTrolleySubtitleSentence(subtitleEl, sentences, sentenceIndex, playbackToken) {
+    if (playbackToken !== trolleySubtitlePlaybackToken) {
+        return;
+    }
+
+    const sentence = sentences[sentenceIndex];
+
+    if (!sentence) {
+        trolleySubtitleSentenceTimeoutId = null;
+        return;
+    }
+
+    subtitleEl.textContent = sentence.text;
+    const isLastSentence = sentenceIndex >= sentences.length - 1;
+    setTrolleySubtitleVisibility(subtitleEl, true);
+
+    trolleySubtitleSentenceTimeoutId = window.setTimeout(() => {
+        if (playbackToken !== trolleySubtitlePlaybackToken) {
+            return;
+        }
+
+        if (!isLastSentence) {
+            showTrolleySubtitleSentence(subtitleEl, sentences, sentenceIndex + 1, playbackToken);
+            return;
+        }
+
+        setTrolleySubtitleVisibility(subtitleEl, false);
+
+        window.setTimeout(() => {
+            trolleySubtitleSentenceTimeoutId = null;
+        }, TROLLEY_SUBTITLE_FADE_MS);
+    }, sentence.durationMs);
+}
+
+function getTrolleySubtitleElement() {
+    const subtitleEl = document.querySelector(TROLLEY_SUBTITLE_SELECTOR);
+    return subtitleEl instanceof HTMLElement ? subtitleEl : null;
+}
+
+async function showTrolleySubtitleForSource(source) {
+    const subtitleMap = await trolleySubtitlesPromise;
+    const sourceName = getAudioSourceName(source);
+    const subtitleSentences = subtitleMap.get(sourceName);
+    const subtitleEl = getTrolleySubtitleElement();
+
+    if (!(subtitleEl instanceof HTMLElement)) {
+        return;
+    }
+
+    if (!Array.isArray(subtitleSentences) || subtitleSentences.length === 0) {
+        clearTrolleySubtitleForSource(source);
+        return;
+    }
+
+    cancelTrolleySubtitleSentencePlayback();
+
+    activeTrolleySubtitleSource = sourceName;
+    const playbackToken = trolleySubtitlePlaybackToken;
+    showTrolleySubtitleSentence(subtitleEl, subtitleSentences, 0, playbackToken);
+}
+
+function clearTrolleySubtitleForSource(source = null) {
+    if (source !== null && activeTrolleySubtitleSource !== getAudioSourceName(source)) {
+        return;
+    }
+
+    cancelTrolleySubtitleSentencePlayback();
+    activeTrolleySubtitleSource = '';
+
+    const subtitleEl = getTrolleySubtitleElement();
+
+    if (!(subtitleEl instanceof HTMLElement)) {
+        return;
+    }
+
+    subtitleEl.classList.remove('opacity-70');
+    subtitleEl.classList.add('opacity-0');
+    subtitleEl.textContent = '';
+}
 
 function getTickPauseShakeValues(cycle, intensity = 1) {
     let x = 0;
@@ -364,9 +528,18 @@ function initTrolleyArrival() {
     trolleyAudio.muted = false;
     trolleyAudio.volume = 1;
 
+    const trolleySource = trolleyAudio.currentSrc || trolleyAudio.querySelector('source')?.getAttribute('src') || '';
+
+    trolleyAudio.addEventListener('ended', () => {
+        clearTrolleySubtitleForSource(trolleySource);
+    }, { once: true });
+
     window.setTimeout(() => {
+        void showTrolleySubtitleForSource(trolleySource);
+
         void trolleyAudio.play().catch(() => {
             // Browsers may block playback until interaction; keep visual timing intact.
+            clearTrolleySubtitleForSource(trolleySource);
         });
     }, 2000);
 

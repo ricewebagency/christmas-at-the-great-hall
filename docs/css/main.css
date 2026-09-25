@@ -696,6 +696,14 @@ video {
   top: 50%;
 }
 
+.top-\[17\%\]{
+  top: 17%;
+}
+
+.bottom-\[100px\]{
+  bottom: 100px;
+}
+
 .z-0{
   z-index: 0;
 }
@@ -738,6 +746,10 @@ video {
 
 .z-\[999\]{
   z-index: 999;
+}
+
+.z-\[5\]{
+  z-index: 5;
 }
 
 .mx-auto{
@@ -1795,6 +1807,10 @@ body.audio-gate-visible #sorting-main {
 
 .\[filter\:drop-shadow\(0_8px_8px_rgba\(0\2c 0\2c 0\2c 0\.08\)\)\]{
   filter: drop-shadow(0 8px 8px rgba(0,0,0,0.08));
+}
+
+.\[overflow-clip-margin\:unset\]{
+  overflow-clip-margin: unset;
 }
 
 .\[overflow-x\:clip\]{
