@@ -1,4 +1,5 @@
 import { getInvitationData, sendSortingHouseResult } from './api-client.js';
+import { resetLocalStorageState, writeJsonToLocalStorage } from './storage-utils.js';
 
 const STORAGE_KEY = 'magical-winter-banquet.sorting-hat';
 const HOUSE_ORDER = ['gryffindor', 'hufflepuff', 'ravenclaw', 'slytherin'];
@@ -50,7 +51,7 @@ const ALMOST_THERE_SORTING_HAT_FRAGMENT_SOURCE =
 const RANDOM_SORTING_HAT_FRAGMENT_SOURCES = SORTING_HAT_FRAGMENT_SOURCES.filter(
     (source) => source !== ALMOST_THERE_SORTING_HAT_FRAGMENT_SOURCE
 );
-const SORTING_QUESTION_COUNT = 15;
+const SORTING_QUESTION_COUNT = 1;
 const SORTING_HAT_FRAGMENT_HISTORY_LIMIT = SORTING_HAT_FRAGMENT_SOURCES.length;
 const QUESTION_TRANSITION_MS = 720;
 const SORTING_UI_DELAY_MS = 240;
@@ -622,21 +623,14 @@ function playAudioAndWait(audio) {
 }
 
 function safeStoreState(state) {
-    try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-        // Ignore storage failures and keep the quiz usable.
-    }
+    writeJsonToLocalStorage(STORAGE_KEY, state);
 }
 
 function resetStoredState() {
-    const state = {
+    return resetLocalStorageState(STORAGE_KEY, {
         currentQuestionIndex: 0,
         scores: createEmptyScores()
-    };
-
-    safeStoreState(state);
-    return state;
+    });
 }
 
 async function loadQuestions() {
@@ -726,7 +720,9 @@ function initSortingQuiz() {
             }
 
             if (typeof window.playSortingHatWelcomeAudio === 'function') {
-                window.playSortingHatWelcomeAudio();
+                window.setTimeout(() => {
+                    window.playSortingHatWelcomeAudio();
+                }, 2400);
             }
         });
 

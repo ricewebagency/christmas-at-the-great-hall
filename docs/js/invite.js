@@ -5,6 +5,7 @@ import {
     setupLinkExitTransition
 } from "./page-transitions.js";
 import { getInvitationData } from "./api-client.js";
+import { resetClientStorage } from "./storage-utils.js";
 
 const RSVP_LABELS = {
     pending: "Awaiting your response",
@@ -29,6 +30,12 @@ const ENVELOPE_TOP_FILTERS = {
 };
 
 const RSVP_EXIT_FADE_DURATION_MS = 800;
+const INVITE_RESET_LOCAL_STORAGE_KEYS = [
+    "magical-winter-banquet.sorting-hat",
+    "magical-winter-banquet.cabin",
+    "magical-winter-banquet.cabin-dish-selection"
+];
+const INVITE_RESET_COOKIE_NAMES = ["magical-winter-banquet.cabin"];
 
 function pad(value) {
     return String(value).padStart(2, "0");
@@ -228,6 +235,13 @@ function setupRsvpExitTransition() {
     });
 }
 
+function resetStorageOnInviteOpen() {
+    resetClientStorage({
+        localStorageKeys: INVITE_RESET_LOCAL_STORAGE_KEYS,
+        cookieNames: INVITE_RESET_COOKIE_NAMES
+    });
+}
+
 async function initInvitePage() {
     const invitationRoot = document.getElementById("invitation-root");
 
@@ -249,6 +263,7 @@ async function initInvitePage() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    resetStorageOnInviteOpen();
     lockInitialViewportHeight();
     setupRsvpExitTransition();
     void initInvitePage();

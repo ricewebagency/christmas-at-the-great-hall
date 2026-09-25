@@ -37,6 +37,11 @@ module.exports = {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
         },
+        backdropGlow: {
+          "0%": { opacity: "0" },
+          "50%": { opacity: "0.5" },
+          "100%": { opacity: "0" },
+        },
         marquee: {
           from: { transform: "translateX(0%)" },
           to: { transform: "translateX(-50%)" },
@@ -189,6 +194,7 @@ module.exports = {
         fadeIn800: "fadeIn 1.2s ease-out 0.8s both",
         fadeIn1800: "fadeIn 1.8s ease-out both",
         fadeIn1000: "fadeIn 1.0s ease-out both",
+        backdropGlow: "backdropGlow 1.8s ease-in-out infinite",
         marquee: "marquee 30s linear infinite",
         spinSlow: "spinSlow 60s linear infinite",
         loadingFadeOut: "loadingFadeOut 0.4s ease-out 0.5s forwards",

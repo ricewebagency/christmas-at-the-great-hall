@@ -1,3 +1,5 @@
+import { readJsonFromLocalStorage, writeJsonToLocalStorage } from './storage-utils.js';
+
 const mockInvitation = {
     guestName: "Maurice van Dorst",
     eventDate: "2026-12-24T18:00:00",
@@ -14,10 +16,50 @@ const mockCabinDishSelectionStore = {
     lastSelection: null
 };
 
+const DISH_CATALOG_URL = new URL('../assets/files/dishes.json', import.meta.url);
+
+async function getRandomTakenDishIdsFromCatalog(count = 3) {
+    const targetCount = Number.isInteger(count) ? Math.max(1, count) : 3;
+
+    try {
+        const response = await fetch(DISH_CATALOG_URL, {
+            cache: 'no-store'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to load dishes catalog: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const dishEntries = Array.isArray(data) ? data : [];
+        const uniqueDishIds = Array.from(new Set(
+            dishEntries
+                .flatMap((course) => Array.isArray(course?.dishes) ? course.dishes : [])
+                .map((dish) => String(dish?.id ?? '').trim())
+                .filter((dishId) => dishId.length > 0)
+        ));
+
+        if (uniqueDishIds.length === 0) {
+            return ['1'];
+        }
+
+        const shuffledDishIds = [...uniqueDishIds];
+        for (let index = shuffledDishIds.length - 1; index > 0; index -= 1) {
+            const randomIndex = Math.floor(Math.random() * (index + 1));
+            [shuffledDishIds[index], shuffledDishIds[randomIndex]] = [shuffledDishIds[randomIndex], shuffledDishIds[index]];
+        }
+
+        return shuffledDishIds.slice(0, Math.min(targetCount, shuffledDishIds.length));
+    } catch (error) {
+        console.warn('Could not load the dishes catalog for the mock taken dish selection.', error);
+        return ['1'];
+    }
+}
+
 const CABIN_STORAGE_KEY = 'magical-winter-banquet.cabin';
 const CABIN_COOKIE_NAME = 'magical-winter-banquet.cabin';
 const CABIN_DEPARTMENTS = ['gryffindor', 'hufflepuff', 'ravenclaw', 'slytherin'];
-const CABIN_DISH_SELECTION_LIMIT = 2;
+const CABIN_DISH_SELECTION_LIMIT = 4;
 
 function normalizeDishSelection(selection) {
     if (!Array.isArray(selection)) {
@@ -99,20 +141,9 @@ function readCabinCookie() {
 }
 
 function readStoredCabinData() {
-    if (typeof window === 'undefined') {
-        return null;
-    }
-
-    try {
-        const cachedValue = window.localStorage.getItem(CABIN_STORAGE_KEY);
-        if (cachedValue) {
-            const parsed = JSON.parse(cachedValue);
-            if (parsed && typeof parsed === 'object') {
-                return normalizeCabinData({ ...parsed, source: 'cache' });
-            }
-        }
-    } catch {
-        // Ignore storage issues and fall back to the cookie or mock API.
+    const cachedValue = readJsonFromLocalStorage(CABIN_STORAGE_KEY, null);
+    if (cachedValue && typeof cachedValue === 'object') {
+        return normalizeCabinData({ ...cachedValue, source: 'cache' });
     }
 
     const cookieValue = readCabinCookie();
@@ -126,11 +157,7 @@ function readStoredCabinData() {
 function persistCabinData(data) {
     const normalizedData = normalizeCabinData({ ...data, source: data?.source || 'api' });
 
-    try {
-        window.localStorage.setItem(CABIN_STORAGE_KEY, JSON.stringify(normalizedData));
-    } catch {
-        // Ignore storage restrictions and keep the data usable in the page.
-    }
+    writeJsonToLocalStorage(CABIN_STORAGE_KEY, normalizedData);
 
     writeCabinCookie(JSON.stringify(normalizedData));
 
@@ -249,5 +276,17 @@ export async function sendCabinDishSelection(payload) {
         ok: true,
         status: 200,
         data: savedSelection
+    };
+}
+
+export async function fetchTakenCabinDishIds() {
+    const dishIds = await getRandomTakenDishIdsFromCatalog(3);
+
+    return {
+        ok: true,
+        status: 200,
+        data: {
+            dishIds
+        }
     };
 }

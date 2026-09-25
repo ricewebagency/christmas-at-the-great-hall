@@ -1,4 +1,5 @@
-import { getCabinData, sendCabinDishSelection } from './api-client.js';
+import { fetchTakenCabinDishIds, getCabinData, sendCabinDishSelection } from './api-client.js';
+import { readJsonFromLocalStorage, writeJsonToLocalStorage } from './storage-utils.js';
 
 const DEFAULT_CABIN_IMAGE = './assets/images/hogwarts-express-cabin-front-gryffindor.png';
 const BACKDROP_SELECTOR = '[data-cabin-backdrop]';
@@ -7,20 +8,30 @@ const TROLLEY_AUDIO_SELECTOR = '[data-trolley-audio]';
 const TROLLEY_IMAGE_SELECTOR = '[data-trolley-witch]';
 const TROLLEY_SUBTITLE_SELECTOR = '[data-trolley-subtitles]';
 const PARCHMENT_SELECTOR = '[data-parchment-container]';
-const PARCHMENT_REVEAL_SELECTOR = '[data-parchment-reveal]';
 const SCREEN_LOADER_SELECTOR = '[data-screen-loader]';
 const TRAIN_SHAKE_SELECTOR = '[data-train-shake]';
 const DISH_INTRO_PANEL_SELECTOR = '[data-dish-intro-panel]';
 const DISH_INTRO_SELECTOR = '[data-dish-intro]';
 const DISH_PANEL_SELECTOR = '[data-dish-panel]';
+const DISH_CHOICE_LIST_SELECTOR = '[data-dish-choice-list]';
+const DISH_CAROUSEL_TRACK_SELECTOR = '[data-dish-carousel-track]';
+const DISH_PREV_BUTTON_SELECTOR = '[data-dish-prev]';
+const DISH_NEXT_BUTTON_SELECTOR = '[data-dish-next]';
+const DISH_DOTS_SELECTOR = '[data-dish-dots]';
 const DISH_CHOICE_SELECTOR = '[data-dish-choice]';
 const DISH_CONFIRM_SELECTOR = '[data-dish-confirm]';
+const DISH_SELECTED_SUMMARY_SELECTOR = '[data-selected-dish-summary]';
+const DISH_SELECTED_SUMMARY_LABEL_SELECTOR = '[data-selected-dish-label]';
+const DISH_SELECTED_SUMMARY_VALUE_SELECTOR = '[data-selected-dish-value]';
 const DISH_SELECTION_STORAGE_KEY = 'magical-winter-banquet.cabin-dish-selection';
-const DISH_SELECTION_LIMIT = 2;
+const DISH_CATALOG_URL = new URL('../assets/files/dishes.json', import.meta.url);
+const DISH_SELECTION_LIMIT = 4;
 const CABIN_CONFIRM_REDIRECT_PATH = './chamber';
 const CABIN_EXIT_FADE_DURATION_MS = 1300;
 const CABIN_SCREEN_LOADER_DURATION_MS = 2200;
 const TROLLEY_SUBTITLE_FADE_MS = 300;
+const DISH_CAROUSEL_SWIPE_MIN_DISTANCE_PX = 48;
+const DISH_CAROUSEL_SWIPE_AXIS_RATIO = 1.2;
 const TROLLEY_SUBTITLES_URL = new URL('../assets/files/trolley-witch-subtitles.json', import.meta.url);
 
 const trolleySubtitlesPromise = fetch(TROLLEY_SUBTITLES_URL, {
@@ -324,42 +335,28 @@ function revealParchment() {
     // Now remove opacity-0 and add animation
     parchmentEl.classList.remove('opacity-0');
     parchmentEl.classList.add('animate-fadeIn1800');
+
+    window.dispatchEvent(new Event('reveal-sequence:start'));
 }
 
 function getSavedDishSelection() {
-    if (typeof window === 'undefined') {
+    const parsedValue = readJsonFromLocalStorage(DISH_SELECTION_STORAGE_KEY, []);
+
+    if (!Array.isArray(parsedValue)) {
         return [];
     }
 
-    try {
-        const storedValue = window.localStorage.getItem(DISH_SELECTION_STORAGE_KEY);
-
-        if (!storedValue) {
-            return [];
-        }
-
-        const parsedValue = JSON.parse(storedValue);
-
-        if (!Array.isArray(parsedValue)) {
-            return [];
-        }
-
-        return parsedValue.filter((value) => typeof value === 'string' && value.trim().length > 0).slice(0, DISH_SELECTION_LIMIT);
-    } catch {
-        return [];
-    }
+    return parsedValue
+        .filter((value) => typeof value === 'string' && value.trim().length > 0)
+        .slice(0, DISH_SELECTION_LIMIT);
 }
 
 function persistDishSelection(selectedDishIds) {
-    if (typeof window === 'undefined') {
-        return;
-    }
+    writeJsonToLocalStorage(DISH_SELECTION_STORAGE_KEY, selectedDishIds);
+}
 
-    try {
-        window.localStorage.setItem(DISH_SELECTION_STORAGE_KEY, JSON.stringify(selectedDishIds));
-    } catch {
-        // Ignore storage restrictions and keep the page interaction usable.
-    }
+function resetDishSelectionOnCabinOpen() {
+    writeJsonToLocalStorage(DISH_SELECTION_STORAGE_KEY, []);
 }
 
 function fadeOutBodyAndNavigate(destination, durationMs = CABIN_EXIT_FADE_DURATION_MS) {
@@ -388,37 +385,365 @@ function fadeOutBodyAndNavigate(destination, durationMs = CABIN_EXIT_FADE_DURATI
     }, durationMs);
 }
 
-function initDishSelection() {
+function slugifyDishChoiceId(value) {
+    return String(value ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+function getDishChoiceId(dish, fallbackText = '') {
+    const rawDishId = dish?.id;
+
+    if (rawDishId !== undefined && rawDishId !== null && rawDishId !== '') {
+        return String(rawDishId).trim();
+    }
+
+    return slugifyDishChoiceId(fallbackText || dish?.name || dish?.name_nl || '');
+}
+
+async function loadDishCatalog() {
+    const response = await fetch(DISH_CATALOG_URL, {
+        cache: 'no-store'
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to load dishes catalog: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+}
+
+function renderDishChoiceGroups(courseGroups) {
+    const carouselTrack = document.querySelector(DISH_CAROUSEL_TRACK_SELECTOR);
+    const dotsContainer = document.querySelector(DISH_DOTS_SELECTOR);
+
+    if (!(carouselTrack instanceof HTMLElement) || !(dotsContainer instanceof HTMLElement)) {
+        return;
+    }
+
+    carouselTrack.innerHTML = '';
+    dotsContainer.innerHTML = '';
+
+    const groups = Array.isArray(courseGroups) ? courseGroups : [];
+    const visibleGroupPages = [];
+
+    for (let index = 0; index < groups.length; index += 1) {
+        visibleGroupPages.push(groups.slice(index, index + 1));
+    }
+
+    if (visibleGroupPages.length === 0) {
+        return;
+    }
+
+    visibleGroupPages.forEach((pageGroups, pageIndex) => {
+        const page = document.createElement('div');
+        page.className = 'w-full shrink-0 basis-full';
+
+        const pageContent = document.createElement('div');
+        pageContent.className = 'space-y-4';
+
+        pageGroups.forEach((courseGroup, courseIndex) => {
+            const dishes = Array.isArray(courseGroup?.dishes) ? courseGroup.dishes : [];
+
+            if (!dishes.length) {
+                return;
+            }
+
+            const courseContainer = document.createElement('div');
+            courseContainer.className = 'space-y-2';
+
+            const courseHeading = document.createElement('p');
+            courseHeading.className = 'text-sm leading-none text-[#1f1d1a] sm:text-base';
+            courseHeading.textContent = courseGroup?.course || courseGroup?.course_nl || `Course ${pageIndex + 1}`;
+            courseHeading.dataset.reveal = 'true';
+            courseHeading.style.setProperty('--reveal-delay', `${(pageIndex + 1) * 450}ms`);
+
+            const dishGrid = document.createElement('div');
+            dishGrid.className = 'grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2';
+
+            dishes.forEach((dish, dishIndex) => {
+                const dishButton = document.createElement('button');
+                const dishId = getDishChoiceId(dish, `${pageIndex + 1}-${courseIndex + 1}-${dishIndex + 1}`);
+                const dishNameText = typeof dish?.name === 'string' ? dish.name.trim() : '';
+                const dishNameNl = typeof dish?.name_nl === 'string' ? dish.name_nl.trim() : '';
+                const dishLabel = dishNameText || dishNameNl || `Dish ${dishIndex + 1}`;
+                const dishDescription = dish?.description || '';
+
+                dishButton.type = 'button';
+                dishButton.dataset.dishChoice = dishId;
+                dishButton.dataset.dishLabel = dishLabel;
+                dishButton.dataset.reveal = 'true';
+                dishButton.style.setProperty('--reveal-delay', `${(pageIndex + 1) * 450 + 150 + dishIndex * 100}ms`);
+                dishButton.className = 'group inline-flex flex-col items-start gap-1 text-left text-[#1f1d1a]/90 transition-colors duration-200 hover:text-[#1f1d1a] focus:outline-none focus-visible:outline-none';
+
+                const dishContent = document.createElement('div');
+                dishContent.className = 'flex items-start gap-2';
+
+                const dishNumber = document.createElement('span');
+                dishNumber.className = 'transition-opacity duration-200 group-aria-pressed:opacity-100';
+                dishNumber.textContent = `${dishIndex + 1}.`;
+
+                const dishNameElement = document.createElement('span');
+                dishNameElement.className = 'transition-[text-decoration-color] duration-200 group-aria-pressed:underline group-aria-pressed:decoration-[#1f1d1a]/70 group-aria-pressed:underline-offset-4';
+                dishNameElement.dataset.dishChoiceName = 'true';
+                dishNameElement.textContent = dishLabel;
+
+                dishContent.append(dishNumber, dishNameElement);
+
+                dishButton.append(dishContent);
+
+                if (dishDescription) {
+                    const description = document.createElement('span');
+                    description.className = 'text-xs text-[#1f1d1a]/40';
+                    description.dataset.dishChoiceDescription = 'true';
+                    description.textContent = dishDescription;
+                    dishButton.append(description);
+                }
+
+                dishGrid.append(dishButton);
+            });
+
+            courseContainer.append(courseHeading, dishGrid);
+            pageContent.append(courseContainer);
+        });
+
+        page.append(pageContent);
+        carouselTrack.append(page);
+    });
+
+    visibleGroupPages.forEach((_, dotIndex) => {
+        const dotButton = document.createElement('button');
+        dotButton.type = 'button';
+        dotButton.className = 'h-1.5 w-1.5 rounded-full bg-[#1f1d1a]/35 opacity-70 transition-all duration-200';
+        dotButton.setAttribute('aria-label', `Go to dishes page ${dotIndex + 1}`);
+        dotButton.dataset.dishPageDot = String(dotIndex);
+        dotsContainer.append(dotButton);
+    });
+}
+
+async function initDishSelection() {
     const introPanel = document.querySelector(DISH_INTRO_PANEL_SELECTOR);
     const introButton = document.querySelector(DISH_INTRO_SELECTOR);
     const dishPanel = document.querySelector(DISH_PANEL_SELECTOR);
-    const dishButtons = Array.from(document.querySelectorAll(DISH_CHOICE_SELECTOR));
     const dishConfirmButton = document.querySelector(DISH_CONFIRM_SELECTOR);
+    const dishChoiceList = document.querySelector(DISH_CHOICE_LIST_SELECTOR);
+    const prevButton = document.querySelector(DISH_PREV_BUTTON_SELECTOR);
+    const nextButton = document.querySelector(DISH_NEXT_BUTTON_SELECTOR);
+    const carouselTrack = document.querySelector(DISH_CAROUSEL_TRACK_SELECTOR);
+    const selectedDishSummary = document.querySelector(DISH_SELECTED_SUMMARY_SELECTOR);
+
+    const selectedDishSummaryLabel = selectedDishSummary instanceof HTMLElement
+        ? selectedDishSummary.querySelector(DISH_SELECTED_SUMMARY_LABEL_SELECTOR)
+        : null;
+    const selectedDishSummaryValue = selectedDishSummary instanceof HTMLElement
+        ? selectedDishSummary.querySelector(DISH_SELECTED_SUMMARY_VALUE_SELECTOR)
+        : null;
 
     if (
         !(introPanel instanceof HTMLElement) ||
         !(introButton instanceof HTMLButtonElement) ||
         !(dishPanel instanceof HTMLElement) ||
-        !dishButtons.length ||
-        !(dishConfirmButton instanceof HTMLButtonElement)
+        !(dishChoiceList instanceof HTMLElement) ||
+        !(dishConfirmButton instanceof HTMLButtonElement) ||
+        !(prevButton instanceof HTMLButtonElement) ||
+        !(nextButton instanceof HTMLButtonElement) ||
+        !(carouselTrack instanceof HTMLElement)
     ) {
         return;
     }
 
+    try {
+        const dishGroups = await loadDishCatalog();
+        renderDishChoiceGroups(dishGroups);
+    } catch (error) {
+        console.warn('Could not load dish catalog.', error);
+    }
+
+    const dishButtons = Array.from(document.querySelectorAll(DISH_CHOICE_SELECTOR));
+    const dots = Array.from(document.querySelectorAll('[data-dish-page-dot]'));
+    let currentDishPageIndex = 0;
+
+    carouselTrack.style.touchAction = 'pan-y';
+
+    const syncDishCarousel = () => {
+        const resolvedPageCount = Math.max(1, dots.length || 1);
+        const offset = -currentDishPageIndex * 100;
+
+        carouselTrack.style.transform = `translateX(${offset}%)`;
+        prevButton.disabled = currentDishPageIndex === 0;
+        nextButton.disabled = currentDishPageIndex >= resolvedPageCount - 1;
+
+        dots.forEach((dot, index) => {
+            const isActive = index === currentDishPageIndex;
+            dot.classList.toggle('bg-[#1f1d1a]', isActive);
+            dot.classList.toggle('bg-[#1f1d1a]/35', !isActive);
+            dot.classList.toggle('opacity-100', isActive);
+            dot.classList.toggle('opacity-70', !isActive);
+            dot.classList.toggle('h-2', isActive);
+            dot.classList.toggle('w-2', isActive);
+            dot.classList.toggle('h-1.5', !isActive);
+            dot.classList.toggle('w-1.5', !isActive);
+            dot.setAttribute('aria-current', isActive ? 'true' : 'false');
+        });
+    };
+
+    const goToDishPage = (targetIndex) => {
+        const maxIndex = Math.max(0, dots.length - 1);
+        const clampedIndex = Math.min(Math.max(targetIndex, 0), maxIndex);
+
+        if (clampedIndex === currentDishPageIndex) {
+            return;
+        }
+
+        currentDishPageIndex = clampedIndex;
+        syncDishCarousel();
+    };
+
+    prevButton.addEventListener('click', () => {
+        if (currentDishPageIndex > 0) {
+            goToDishPage(currentDishPageIndex - 1);
+        }
+    });
+
+    nextButton.addEventListener('click', () => {
+        const maxIndex = Math.max(0, (document.querySelectorAll('[data-dish-page-dot]').length || 1) - 1);
+        if (currentDishPageIndex < maxIndex) {
+            goToDishPage(currentDishPageIndex + 1);
+        }
+    });
+
+    dots.forEach((dot) => {
+        dot.addEventListener('click', () => {
+            const targetIndex = Number(dot.dataset.dishPageDot ?? '0');
+            goToDishPage(Number.isFinite(targetIndex) ? targetIndex : 0);
+        });
+    });
+
+    let activePointerId = null;
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+
+    const resetSwipeState = () => {
+        activePointerId = null;
+        swipeStartX = 0;
+        swipeStartY = 0;
+    };
+
+    carouselTrack.addEventListener('pointerdown', (event) => {
+        if (!event.isPrimary || (event.pointerType !== 'touch' && event.pointerType !== 'pen')) {
+            return;
+        }
+
+        activePointerId = event.pointerId;
+        swipeStartX = event.clientX;
+        swipeStartY = event.clientY;
+    });
+
+    carouselTrack.addEventListener('pointerup', (event) => {
+        if (activePointerId === null || event.pointerId !== activePointerId) {
+            return;
+        }
+
+        const deltaX = event.clientX - swipeStartX;
+        const deltaY = event.clientY - swipeStartY;
+        const absX = Math.abs(deltaX);
+        const absY = Math.abs(deltaY);
+
+        if (absX >= DISH_CAROUSEL_SWIPE_MIN_DISTANCE_PX && absX > absY * DISH_CAROUSEL_SWIPE_AXIS_RATIO) {
+            if (deltaX < 0) {
+                goToDishPage(currentDishPageIndex + 1);
+            } else {
+                goToDishPage(currentDishPageIndex - 1);
+            }
+        }
+
+        resetSwipeState();
+    });
+
+    carouselTrack.addEventListener('pointercancel', resetSwipeState);
+
+    if (!dishButtons.length) {
+        return;
+    }
+
+    syncDishCarousel();
+
     const selectedDishIds = new Set(getSavedDishSelection());
+    const occupiedDishIds = new Set();
     let isSubmittingSelection = false;
+    const dishLabelById = new Map();
+
+    dishButtons.forEach((button) => {
+        if (!(button instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        const dishId = button.dataset.dishChoice || '';
+        const dishLabel = button.dataset.dishLabel || '';
+
+        if (dishId && dishLabel) {
+            dishLabelById.set(dishId, dishLabel);
+        }
+    });
+
+    const normalizeDishIds = (value) => {
+        if (!Array.isArray(value)) {
+            return [];
+        }
+
+        return Array.from(new Set(
+            value
+                .map((item) => String(item ?? '').trim())
+                .filter((item) => item.length > 0)
+        ));
+    };
+
+    const syncOccupiedDishIds = (dishIds) => {
+        occupiedDishIds.clear();
+        normalizeDishIds(dishIds).forEach((dishId) => {
+            occupiedDishIds.add(dishId);
+        });
+
+        Array.from(selectedDishIds).forEach((dishId) => {
+            if (occupiedDishIds.has(dishId)) {
+                selectedDishIds.delete(dishId);
+            }
+        });
+    };
 
     const syncDishButtonState = (button) => {
         const dishId = button.dataset.dishChoice || '';
         const isSelected = selectedDishIds.has(dishId);
-        const shouldDisable = !isSelected && selectedDishIds.size >= DISH_SELECTION_LIMIT;
+        const isOccupied = occupiedDishIds.has(dishId);
+        const shouldDisable = isOccupied || (!isSelected && selectedDishIds.size >= DISH_SELECTION_LIMIT);
+        const shouldDim = !isSelected && selectedDishIds.size > 0;
+        const dishNameElement = button.querySelector('[data-dish-choice-name]');
+        const dishDescriptionElement = button.querySelector('[data-dish-choice-description]');
 
         button.setAttribute('aria-pressed', String(isSelected));
         button.toggleAttribute('disabled', shouldDisable);
-        button.classList.toggle('opacity-100', isSelected);
-        button.classList.toggle('opacity-70', !isSelected && !shouldDisable);
-        button.classList.toggle('opacity-35', shouldDisable);
+        button.classList.toggle('text-[#1f1d1a]', isSelected);
+        button.classList.toggle('text-[#1f1d1a]/90', !isSelected && !shouldDim);
+        button.classList.toggle('text-[#1f1d1a]/45', shouldDim || shouldDisable);
+        button.classList.toggle('hover:text-[#1f1d1a]', !shouldDim && !shouldDisable);
         button.classList.toggle('pointer-events-none', shouldDisable);
+
+        if (dishNameElement instanceof HTMLElement) {
+            dishNameElement.classList.toggle('line-through', isOccupied);
+            dishNameElement.classList.toggle('decoration-[#1f1d1a]/45', isOccupied);
+            dishNameElement.classList.toggle('decoration-2', isOccupied);
+        }
+
+        if (dishDescriptionElement instanceof HTMLElement) {
+            dishDescriptionElement.classList.toggle('line-through', isOccupied);
+            dishDescriptionElement.classList.toggle('decoration-[#1f1d1a]/45', isOccupied);
+            dishDescriptionElement.classList.toggle('decoration-2', isOccupied);
+        }
     };
 
     const syncDishState = () => {
@@ -427,6 +752,15 @@ function initDishSelection() {
                 syncDishButtonState(button);
             }
         });
+
+        if (selectedDishSummaryLabel instanceof HTMLElement && selectedDishSummaryValue instanceof HTMLElement) {
+            const selectedDishLabels = Array.from(selectedDishIds)
+                .map((dishId) => dishLabelById.get(dishId) || '')
+                .filter((dishLabel) => dishLabel.length > 0);
+
+            selectedDishSummaryLabel.textContent = 'Selected dishes:';
+            selectedDishSummaryValue.textContent = selectedDishLabels.length > 0 ? selectedDishLabels.join(', ') : '-';
+        }
 
         dishConfirmButton.disabled = selectedDishIds.size === 0;
 
@@ -449,6 +783,7 @@ function initDishSelection() {
             introPanel.classList.add('hidden');
 
             dishPanel.classList.remove('hidden');
+            dishPanel.classList.add('flex');
             window.requestAnimationFrame(() => {
                 dishPanel.classList.remove('translate-y-1');
                 dishPanel.classList.add('opacity-100', 'pointer-events-auto');
@@ -471,7 +806,7 @@ function initDishSelection() {
         button.addEventListener('click', () => {
             const dishId = button.dataset.dishChoice || '';
 
-            if (!dishId) {
+            if (!dishId || occupiedDishIds.has(dishId)) {
                 return;
             }
 
@@ -479,6 +814,7 @@ function initDishSelection() {
                 selectedDishIds.delete(dishId);
                 persistDishSelection(Array.from(selectedDishIds));
                 syncDishState();
+                button.blur();
                 return;
             }
 
@@ -491,6 +827,18 @@ function initDishSelection() {
             syncDishState();
         });
     });
+
+    void fetchTakenCabinDishIds()
+        .then((response) => {
+            console.log('Taken dishes API response:', response);
+            const takenDishIds = response?.data?.dishIds;
+            syncOccupiedDishIds(takenDishIds);
+            persistDishSelection(Array.from(selectedDishIds));
+            syncDishState();
+        })
+        .catch((error) => {
+            console.warn('Could not load already selected dishes.', error);
+        });
 
     dishConfirmButton.addEventListener('click', async () => {
         if (selectedDishIds.size === 0 || isSubmittingSelection) {
@@ -583,6 +931,7 @@ if (typeof document === 'undefined') {
     void 0;
 } else if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
+        resetDishSelectionOnCabinOpen();
         initArrivalAudio();
         initTrainAudio();
         initScreenLoader();
@@ -594,6 +943,7 @@ if (typeof document === 'undefined') {
 
     window.addEventListener('load', initTrolleyArrival, { once: true });
 } else {
+    resetDishSelectionOnCabinOpen();
     initArrivalAudio();
     initTrainAudio();
     initScreenLoader();

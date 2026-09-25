@@ -6,7 +6,6 @@ function unlockBackgroundAudio() {
     }
 
     audio.muted = false;
-    audio.volume = 0.28;
 
     return audio.play().then(() => {
         window.audioIsEnabled = true;

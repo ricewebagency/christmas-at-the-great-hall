@@ -99,6 +99,13 @@ function initRsvpFormSubmission() {
     const burntPaper = document.querySelector('.burnt-paper-fade-out');
     let isSubmitting = false;
 
+    const setChoiceSubmittingState = (isSubmittingState) => {
+        choiceButtons.forEach((button) => {
+            button.classList.toggle('text-black', isSubmittingState);
+            button.classList.toggle('text-charcoal/85', !isSubmittingState);
+        });
+    };
+
     const setActiveChoice = (activeChoice) => {
         choiceButtons.forEach((button) => {
             button.classList.add('opacity-45');
@@ -148,6 +155,7 @@ function initRsvpFormSubmission() {
         }
 
         isSubmitting = true;
+        setChoiceSubmittingState(true);
 
         choiceButtons.forEach((button) => {
             button.disabled = true;
@@ -164,6 +172,7 @@ function initRsvpFormSubmission() {
             window.location.assign('./sorting/');
         } catch {
             isSubmitting = false;
+            setChoiceSubmittingState(false);
             if (burntPaper) {
                 burntPaper.classList.remove('burnt-paper-fade-out');
             }

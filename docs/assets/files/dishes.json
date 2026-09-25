@@ -1,0 +1,140 @@
+[
+  {
+    "course": "Starter course",
+    "course_nl": "Voorgerecht",
+    "dishes": [
+      {
+        "id": 1,
+        "name": "Soup",
+        "name_nl": "Soep",
+        "description": "A warm and comforting start to the feast."
+      },
+      {
+        "id": 2,
+        "name": "Cheese board",
+        "name_nl": "Kaasplank",
+        "description": "A selection of cheeses made for sharing."
+      },
+      {
+        "id": 3,
+        "name": "Bruschetta",
+        "name_nl": "Bruschetta",
+        "description": "Crispy bread topped with fresh and flavourful ingredients."
+      },
+      {
+        "id": 4,
+        "name": "Carpaccio",
+        "name_nl": "Carpaccio",
+        "description": "Thinly sliced beef with a light and elegant topping."
+      }
+    ]
+  },
+  {
+    "course": "Main course",
+    "course_nl": "Hoofdgerecht",
+    "dishes": [
+      {
+        "id": 5,
+        "name": "Meatballs",
+        "name_nl": "Gehaktballetjes",
+        "description": "Juicy, savoury meatballs full of flavour."
+      },
+      {
+        "id": 6,
+        "name": "Beef stew",
+        "name_nl": "Runderstoofpot",
+        "description": "Slow-cooked beef in a rich and hearty stew."
+      },
+      {
+        "id": 7,
+        "name": "Salmon",
+        "name_nl": "Zalm",
+        "description": "Tender salmon, perfect for a festive dinner."
+      },
+      {
+        "id": 8,
+        "name": "Roast chicken",
+        "name_nl": "Gebraden kip",
+        "description": "Golden roasted chicken, tender and full of flavour."
+      }
+    ]
+  },
+  {
+    "course": "Side dish",
+    "course_nl": "Bijgerecht",
+    "dishes": [
+      {
+        "id": 9,
+        "name": "Potato salad",
+        "name_nl": "Aardappelsalade",
+        "description": "A creamy potato salad to complement the feast."
+      },
+      {
+        "id": 10,
+        "name": "Red cabbage",
+        "name_nl": "Rode kool",
+        "description": "Sweet and gently spiced red cabbage."
+      },
+      {
+        "id": 11,
+        "name": "Potatoes",
+        "name_nl": "Aardappelen",
+        "description": "Classic potatoes, a must-have on the dinner table."
+      }
+    ]
+  },
+  {
+    "course": "Dessert",
+    "course_nl": "Nagerecht",
+    "dishes": [
+      {
+        "id": 12,
+        "name": "Apple pie",
+        "name_nl": "Appeltaart",
+        "description": "A warm classic filled with sweet, spiced apples."
+      },
+      {
+        "id": 13,
+        "name": "Tiramisu",
+        "name_nl": "Tiramisu",
+        "description": "A creamy Italian favourite with coffee and cocoa."
+      },
+      {
+        "id": 18,
+        "name": "Chocolate lava cake",
+        "name_nl": "Chocolade lava cake",
+        "description": "A warm chocolate cake with a rich, molten centre."
+      }
+    ]
+  },
+  {
+    "course": "Drinks & extras",
+    "course_nl": "Dranken & extra's",
+    "dishes": [
+      {
+        "id": 14,
+        "name": "Soft drinks",
+        "name_nl": "Frisdrank",
+        "description": "A selection of refreshing drinks for everyone to enjoy."
+      },
+      {
+        "id": 15,
+        "name": "Wine",
+        "name_nl": "Wijn",
+        "description": "A bottle of wine to enjoy alongside the Christmas feast."
+      },
+      {
+        "id": 16,
+        "name": "Beer",
+        "name_nl": "Bier",
+        "description": "A selection of beers to enjoy throughout the evening."
+      },
+      {
+        "id": 17,
+        "name": "Hot chocolate",
+        "name_nl": "Warme chocolademelk",
+        "description": "Rich and warming hot chocolate for a cosy winter evening."
+      }
+    ]
+  }
+]

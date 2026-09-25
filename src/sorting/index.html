@@ -19,6 +19,11 @@
         <source src="./assets/music/platform-nine-and-three-quarters.mp3" type="audio/mp3">
     </audio>
 
+    <!-- Top overlay, intro screen-loader that swipes up on first paint. -->
+    <div data-screen-loader aria-hidden="true"
+        class="pointer-events-none fixed inset-0 z-[999] transform-gpu will-change-transform bg-gradient-to-b from-black via-black to-black animate-screenLoaderSwipeUp">
+    </div>
+
     <div id="sorting-backdrop" aria-hidden="true"
         class="pointer-events-none fixed inset-0 z-0 origin-center bg-[url('../assets/images/the-great-hall.png')] bg-cover bg-center bg-no-repeat opacity-100 transition-opacity duration-700 ease-out animate-[backgroundZoom_1.8s_ease-out_forwards]">
     </div>
@@ -44,17 +49,17 @@
     <main id="sorting-main"
         class="relative z-10 hidden max-h-dvh items-center justify-center overflow-x-hidden px-4 py-8 sm:px-6 sm:py-10">
         <section
-            class="relative z-10 w-full max-w-2xl overflow-x-hidden opacity-0 animate-[revealFade_0.8s_ease-out_forwards] [animation-delay:0.12s]">
+            class="relative z-10 w-full max-w-2xl overflow-x-hidden">
             <div class="p-5 sm:p-8">
-                <div class="text-center opacity-0 animate-[revealFade_0.8s_ease-out_forwards] [animation-delay:0.08s]">
+                <div class="text-center opacity-0 animate-[revealFade_0.8s_ease-out_forwards] [animation-delay:2s]">
                     <img id="sorting-hat-image" src="./assets/images/sorting-hat-talking-1.png" alt="Sorting Hat"
-                        class="mx-auto h-40 w-auto drop-shadow-[0_18px_32px_rgba(0,0,0,0.7)] sm:h-52">
+                        class="mx-auto h-40 w-auto drop-shadow-[0_18px_32px_rgba(0,0,0,0.7)]">
                     <p id="sorting-subtitles"
                         class="mx-auto mt-4 max-w-3xl text-center font-inkpot text-base leading-relaxed text-white opacity-0 transition-opacity duration-300 ease-out drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)] sm:text-lg"
                         aria-live="polite" aria-atomic="true"></p>
                 </div>
 
-                <div class="mt-8 flex flex-col gap-4 text-left font-inkpot text-amber-50 sm:gap-5">
+                <div class="mt-8 flex flex-col gap-4 text-left font-inkpot text-amber-50 sm:gap-5 opacity-0 animate-[revealFade_0.8s_ease-out_forwards] [animation-delay:4s]">
                     <div class="overflow-hidden">
                         <p id="sorting-question"
                             class="hidden text-sm leading-relaxed text-amber-100/80 opacity-0 sm:text-base">

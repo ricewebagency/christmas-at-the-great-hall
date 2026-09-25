@@ -1,0 +1,79 @@
+{
+  "groups": [
+    {
+      "groupId": 1,
+      "groupName": "encounter",
+      "dialogues": [
+        {
+          "id": 1,
+          "text": "Wow! You encounter the Basilisk upon entering the Chamber of Secrets..",
+          "readMore": "Click to continue..."
+        },
+        {
+          "id": 2,
+          "text": "The enormous serpent raises its head and fixes its deadly gaze in your direction. You need to act fast!",
+          "readMore": "Draw your wand"
+        }
+      ]
+    },
+    {
+      "groupId": 2,
+      "groupName": "casting spells",
+      "dialogues": [
+        {
+          "id": 4,
+          "text": "You raise your wand and begin to concentrate. The magical energy crackles in the air around you.",
+          "readMore": "Click to cast"
+        }
+      ]
+    },
+    {
+      "groupId": 3,
+      "groupName": "final strike",
+      "dialogues": [
+        {
+          "id": 6,
+          "text": "The Basilisk seems badly hurt! You have a chance to strike the final blow.",
+          "readMore": "Click to continue..."
+        },
+        {
+          "id": 7,
+          "text": "Focus all your magical energy, and unleash the final spell to defeat the Basilisk!",
+          "readMore": "Click to cast"
+        }
+      ]
+    },
+    {
+      "groupId": 4,
+      "groupName": "well done! Continue to the next page.",
+      "dialogues": [
+        {
+          "id": 8,
+          "text": "Well done! Your spell has worked perfectly. The Basilisk retreats into the depths of the chamber.",
+          "readMore": "Click to continue..."
+        },
+        {
+          "id": 9,
+          "text": "The Chamber of Secrets begins to glow with an ethereal light as peace returns.",
+          "readMore": "Click to continue..."
+        }
+      ]
+    },
+    {
+      "groupId": 5,
+      "groupName": "treasure",
+      "dialogues": [
+        {
+          "id": 11,
+          "text": "Hey! What's that? You find a magical artifact hidden in the chamber..",
+          "readMore": "Click to continue..."
+        },
+        {
+          "id": 12,
+          "text": "It seems to be a map.. I wonder what secrets it holds, and where it might lead to.",
+          "readMore": "Click to open map"
+        }
+      ]
+    }
+  ]
+}

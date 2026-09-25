@@ -8,6 +8,7 @@
     <link rel="icon" href="./favicon.ico">
     <link rel="stylesheet" href="./css/main.css">
     <script src="./js/smooth-scroll.js" defer></script>
+    <script src="./js/chamber.js" defer></script>
 </head>
 
 <body
@@ -17,16 +18,19 @@
     </audio>
 
     <div id="sorting-backdrop" aria-hidden="true"
-        class="pointer-events-none fixed inset-0 z-0 origin-center bg-[url('../assets/images/chamber-of-secrets.png')] bg-cover bg-center bg-no-repeat animate-fadeIn1800">
+        class="pointer-events-none fixed inset-0 z-0 origin-center bg-[url('../assets/images/chamber/background-1.png')] bg-cover bg-center bg-no-repeat animate-fadeIn1800">
     </div>
     <div id="sorting-backdrop-house" aria-hidden="true"
-        class="pointer-events-none fixed inset-0 z-[1] origin-center bg-cover bg-center bg-no-repeat animate-fadeIn1800">
-    </div>
-    <div id="sorting-overlay" aria-hidden="true"
-        class="pointer-events-none fixed inset-0 z-[1] bg-gradient-to-b from-transparent via-black/70 to-black animate-fadeIn1800">
+        class="pointer-events-none fixed inset-0 z-[1] origin-center bg-[url('../assets/images/chamber/background-2.png')] bg-cover bg-center bg-no-repeat opacity-0 animate-backdropGlow">
     </div>
 
-    </main>
+    <div id="sorting-backdrop-final" aria-hidden="true"
+        class="pointer-events-none fixed inset-0 z-[2] origin-center bg-[url('../assets/images/chamber/background-3.png')] bg-cover bg-center bg-no-repeat opacity-0 transition-opacity ease-out">
+    </div>
+
+    <div id="sorting-overlay" aria-hidden="true"
+        class="pointer-events-none fixed inset-0 z-[2] bg-gradient-to-b from-transparent via-black/70 to-black animate-fadeIn1800">
+    </div>
 
 </body>
 
