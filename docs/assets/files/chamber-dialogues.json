@@ -97,18 +97,13 @@
       "groupName": "marauders map",
       "dialogues": [
         {
-          "id": 13,
-          "text": "*The scroll reads the following:*",
-          "readMore": "Click to continue..."
-        },
-        {
           "id": 14,
           "text": "\"Messrs. Moony, Wormtail, Padfoot and Prongs are proud to present the Marauder's Map.\"",
           "readMore": "Click to continue..."
         },
         {
           "id": 15,
-          "text": "Click to continue to the Marauder's Map.",
+          "text": "Mmm, I wonder what that means..",
           "readMore": "Continue to Marauder's Map →"
         }
       ]

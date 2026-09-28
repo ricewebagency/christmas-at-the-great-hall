@@ -29,6 +29,9 @@ const BASILISK_CHATBOX_DELAY_MS = BASILISK_BACKDROP_FADE_MS;
 const BASILISK_CONTINUE_DELAY_MS = 600;
 const BASILISK_CONTINUE_BUTTON_REVEAL_DELAY_MS = 250;
 const BASILISK_DIALOGUE_GROUP_REENTRY_DELAY_MS = BASILISK_FADE_IN_MS + 320;
+const BASILISK_GROUP_SEVEN_TO_EIGHT_DELAY_MS = 1400;
+const CHAMBER_MAP_REDIRECT_FADE_DURATION_MS = 1000;
+const CHAMBER_MAP_REDIRECT_DELAY_MS = 1050;
 const BASILISK_STAFF_FADE_IN_MS = 800;
 const BASILISK_STAFF_SPELL_CAST_MS = 2400;
 const BASILISK_SPELL_PARTICLE_COUNT = 96;
@@ -49,7 +52,7 @@ const PHOENIX_WINGS_AUDIO_SOURCE = './assets/music/chamber/phoenix-wings.mp3';
 const PHOENIX_PAPER_FALLING_AUDIO_SOURCE = './assets/music/chamber/paper-falling.mp3';
 const PHOENIX_PAPER_THUD_AUDIO_SOURCE = './assets/music/chamber/paper-thud.mp3';
 const CHAMBER_AUDIO_GESTURE_EVENTS = ['pointerdown', 'touchstart', 'click', 'keydown'];
-const PHOENIX_SCROLL_SOURCE = './assets/images/chamber/scroll.png';
+const PHOENIX_SCROLL_SOURCE = './assets/images/chamber/scroll-1.png';
 const PHOENIX_SCROLL_DROP_TRIGGER_RATIO = 0.5;
 const PHOENIX_SCROLL_DROP_DURATION_MS = 3600;
 const PHOENIX_SCROLL_THUD_LEAD_MS = 1050;
@@ -87,6 +90,16 @@ const BASILISK_PRELOADS = [
     preloadImage(PHOENIX_SCROLL_SOURCE)
 ];
 
+const CHAMBER_DEBUG_LOGS_ENABLED = true;
+
+function debugChamberLog(...args) {
+    if (!CHAMBER_DEBUG_LOGS_ENABLED) {
+        return;
+    }
+
+    console.log('[chamber]', ...args);
+}
+
 async function loadBasiliskDialogue() {
     try {
         const response = await fetch('./assets/files/chamber-dialogues.json');
@@ -109,6 +122,18 @@ async function loadBasiliskDialogue() {
         const fifthGroup = groups.find((group) => Number(group?.groupId) === 5);
         const sixthGroup = groups.find((group) => Number(group?.groupId) === 6);
         const seventhGroup = groups.find((group) => Number(group?.groupId) === 7);
+        const eighthGroup = groups.find((group) => Number(group?.groupId) === 8);
+
+        debugChamberLog('Loaded dialogue groups', {
+            g1: Array.isArray(encounterGroup?.dialogues) ? encounterGroup.dialogues.length : 0,
+            g2: Array.isArray(secondGroup?.dialogues) ? secondGroup.dialogues.length : 0,
+            g3: Array.isArray(thirdGroup?.dialogues) ? thirdGroup.dialogues.length : 0,
+            g4: Array.isArray(fourthGroup?.dialogues) ? fourthGroup.dialogues.length : 0,
+            g5: Array.isArray(fifthGroup?.dialogues) ? fifthGroup.dialogues.length : 0,
+            g6: Array.isArray(sixthGroup?.dialogues) ? sixthGroup.dialogues.length : 0,
+            g7: Array.isArray(seventhGroup?.dialogues) ? seventhGroup.dialogues.length : 0,
+            g8: Array.isArray(eighthGroup?.dialogues) ? eighthGroup.dialogues.length : 0
+        });
 
         return {
             encounterDialogues: Array.isArray(encounterGroup?.dialogues) ? encounterGroup.dialogues : [],
@@ -117,9 +142,11 @@ async function loadBasiliskDialogue() {
             fourthGroupDialogues: Array.isArray(fourthGroup?.dialogues) ? fourthGroup.dialogues : [],
             fifthGroupDialogues: Array.isArray(fifthGroup?.dialogues) ? fifthGroup.dialogues : [],
             sixthGroupDialogues: Array.isArray(sixthGroup?.dialogues) ? sixthGroup.dialogues : [],
-            seventhGroupDialogues: Array.isArray(seventhGroup?.dialogues) ? seventhGroup.dialogues : []
+            seventhGroupDialogues: Array.isArray(seventhGroup?.dialogues) ? seventhGroup.dialogues : [],
+            eighthGroupDialogues: Array.isArray(eighthGroup?.dialogues) ? eighthGroup.dialogues : []
         };
     } catch {
+        debugChamberLog('Failed to load chamber dialogues; using empty fallback.');
         return {
             encounterDialogues: [],
             secondGroupDialogues: [],
@@ -127,7 +154,8 @@ async function loadBasiliskDialogue() {
             fourthGroupDialogues: [],
             fifthGroupDialogues: [],
             sixthGroupDialogues: [],
-            seventhGroupDialogues: []
+            seventhGroupDialogues: [],
+            eighthGroupDialogues: []
         };
     }
 }
@@ -1003,6 +1031,33 @@ function replaceBackgroundAudioAfterBasiliskDefeat() {
     }
 }
 
+function fadeOutBodyAndNavigateToMap() {
+    debugChamberLog('Starting body fade-out before navigation to ./map.');
+    const bodyElement = document.body;
+
+    if (!(bodyElement instanceof HTMLElement)) {
+        window.location.href = './map';
+        return;
+    }
+
+    const currentOpacity = window.getComputedStyle(bodyElement).opacity || '1';
+    bodyElement.style.opacity = currentOpacity;
+    bodyElement.style.transitionProperty = 'opacity';
+    bodyElement.style.transitionDuration = `${CHAMBER_MAP_REDIRECT_FADE_DURATION_MS}ms`;
+    bodyElement.style.transitionTimingFunction = 'ease-out';
+
+    void bodyElement.offsetWidth;
+
+    window.requestAnimationFrame(() => {
+        bodyElement.style.opacity = '0';
+    });
+
+    window.setTimeout(() => {
+        debugChamberLog('Navigating to ./map.');
+        window.location.href = './map';
+    }, CHAMBER_MAP_REDIRECT_DELAY_MS);
+}
+
 function startBasiliskSequence(layer, backdrop, chatbox, continueLabel, onContinueShown) {
     const timeoutIds = [];
 
@@ -1070,6 +1125,7 @@ async function initChamberScene() {
     const fifthGroupDialogues = dialogueGroups.fifthGroupDialogues;
     const sixthGroupDialogues = dialogueGroups.sixthGroupDialogues;
     const seventhGroupDialogues = dialogueGroups.seventhGroupDialogues;
+    const eighthGroupDialogues = dialogueGroups.eighthGroupDialogues;
 
     if (encounterDialogues.length === 0) {
         return;
@@ -1091,6 +1147,7 @@ async function initChamberScene() {
     let isTransitioningGroup = false;
     let hasShownStaffLayer = false;
     let isContinueVisible = false;
+    let hasStartedMapRedirect = false;
 
     const dialogueGroupById = {
         1: encounterDialogues,
@@ -1099,18 +1156,32 @@ async function initChamberScene() {
         4: fourthGroupDialogues,
         5: fifthGroupDialogues,
         6: sixthGroupDialogues,
-        7: seventhGroupDialogues
+        7: seventhGroupDialogues,
+        8: eighthGroupDialogues
     };
 
     const transitionToDialogueGroup = (groupId, delayMs = 0) => {
         const nextDialogues = dialogueGroupById[groupId];
 
+        debugChamberLog('Requested group transition', {
+            toGroupId: groupId,
+            delayMs,
+            dialogueCount: Array.isArray(nextDialogues) ? nextDialogues.length : null
+        });
+
         if (!Array.isArray(nextDialogues) || nextDialogues.length === 0) {
+            debugChamberLog('Skipped group transition because target group has no dialogues.', {
+                toGroupId: groupId
+            });
             isTransitioningGroup = false;
             return;
         }
 
         window.setTimeout(() => {
+            debugChamberLog('Running group transition timeout callback', {
+                toGroupId: groupId,
+                delayMs
+            });
             currentGroupId = groupId;
             activeDialogues = nextDialogues;
             currentDialogueIndex = 0;
@@ -1132,15 +1203,36 @@ async function initChamberScene() {
                 isContinueVisible = true;
             }, BASILISK_CONTINUE_BUTTON_REVEAL_DELAY_MS);
             isTransitioningGroup = false;
+            debugChamberLog('Group transition complete', {
+                activeGroupId: currentGroupId,
+                currentDialogueIndex
+            });
         }, delayMs);
     };
 
     basiliskContinueLabel.addEventListener('click', () => {
+        debugChamberLog('Continue clicked', {
+            currentGroupId,
+            currentDialogueIndex,
+            activeDialogueCount: activeDialogues.length,
+            isTransitioningGroup,
+            isContinueVisible
+        });
+
         if (isTransitioningGroup || !isContinueVisible) {
+            debugChamberLog('Continue click ignored due to state lock.', {
+                isTransitioningGroup,
+                isContinueVisible
+            });
             return;
         }
 
         if (currentDialogueIndex >= activeDialogues.length - 1) {
+            debugChamberLog('Reached final dialogue in current group', {
+                currentGroupId,
+                currentDialogueIndex,
+                activeDialogueCount: activeDialogues.length
+            });
             hideBasiliskChatbox(basiliskChatbox);
             hideBasiliskContinueLabel(basiliskContinueLabel);
             isContinueVisible = false;
@@ -1186,6 +1278,20 @@ async function initChamberScene() {
                 isTransitioningGroup = true;
 
                 transitionToDialogueGroup(7, BASILISK_DIALOGUE_GROUP_REENTRY_DELAY_MS);
+            } else if (currentGroupId === 7) {
+                isTransitioningGroup = true;
+                debugChamberLog('Transitioning from group 7 to 8 with delay', {
+                    delayMs: BASILISK_GROUP_SEVEN_TO_EIGHT_DELAY_MS
+                });
+
+                transitionToDialogueGroup(8, BASILISK_GROUP_SEVEN_TO_EIGHT_DELAY_MS);
+            } else if (currentGroupId === 8) {
+                if (!hasStartedMapRedirect) {
+                    hasStartedMapRedirect = true;
+                    fadeOutBodyAndNavigateToMap();
+                }
+
+                isTransitioningGroup = false;
             }
 
             return;
