@@ -227,6 +227,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
+    audio.volume = 0.25;
+
     const maybeStartAudio = () => {
         if (window.audioIsEnabled) {
             tryStartSortingHatAudio();
