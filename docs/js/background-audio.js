@@ -6,12 +6,16 @@ function unlockBackgroundAudio() {
     }
 
     audio.muted = false;
+    audio.volume = 0.25;
+
+    if (audio.readyState === HTMLMediaElement.HAVE_NOTHING) {
+        audio.load();
+    }
 
     return audio.play().then(() => {
         window.audioIsEnabled = true;
         return true;
-    }).catch((error) => {
-        console.info("Background audio autoplay was blocked by the browser.", error);
+    }).catch(() => {
         return false;
     });
 }
@@ -180,14 +184,12 @@ function tryStartSortingHatAudio() {
         return audio.play().then(() => {
             startSortingHatImageCycle();
         });
-    }).catch((error) => {
+    }).catch(() => {
         sortingHatAudioStarted = false;
 
         if (typeof window.clearSortingHatSubtitle === "function") {
             window.clearSortingHatSubtitle();
         }
-
-        console.info("Sorting audio autoplay was blocked by the browser.", error);
     });
 }
 
@@ -216,6 +218,8 @@ window.playDelayedSortingAudio = playDelayedSortingAudio;
 window.playSortingHatWelcomeAudio = playSortingHatWelcomeAudio;
 window.tryStartSortingHatAudio = tryStartSortingHatAudio;
 
+const AUDIO_UNLOCK_EVENTS = ["pointerdown", "touchstart", "click", "keydown"];
+
 document.addEventListener("DOMContentLoaded", () => {
     const audio = document.getElementById("background-audio");
 
@@ -236,6 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    document.addEventListener("pointerdown", maybeStartAudio);
-    document.addEventListener("keydown", maybeStartAudio);
+    for (const eventName of AUDIO_UNLOCK_EVENTS) {
+        document.addEventListener(eventName, maybeStartAudio, { capture: true });
+    }
 });

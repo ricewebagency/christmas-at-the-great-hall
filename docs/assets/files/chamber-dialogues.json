@@ -11,8 +11,8 @@
         },
         {
           "id": 2,
-          "text": "The enormous serpent raises its head and fixes its deadly gaze in your direction. You need to act fast!",
-          "readMore": "Draw your wand"
+          "text": "The enormous serpent fixes its deadly gaze in your direction. You need to act fast!",
+          "readMore": "Draw your wand 🪄"
         }
       ]
     },
@@ -22,8 +22,8 @@
       "dialogues": [
         {
           "id": 4,
-          "text": "You raise your wand and begin to concentrate. The magical energy crackles in the air around you.",
-          "readMore": "Click to cast"
+          "text": "You raise your wand and begin to concentrate. Quickly, cast your spell now!",
+          "readMore": "Click to cast 💥"
         }
       ]
     },
@@ -39,13 +39,13 @@
         {
           "id": 7,
           "text": "Focus all your magical energy, and unleash the final spell to defeat the Basilisk!",
-          "readMore": "Click to cast"
+          "readMore": "Cast again 💥"
         }
       ]
     },
     {
       "groupId": 4,
-      "groupName": "well done! Continue to the next page.",
+      "groupName": "peace",
       "dialogues": [
         {
           "id": 8,
@@ -61,17 +61,55 @@
     },
     {
       "groupId": 5,
-      "groupName": "treasure",
+      "groupName": "mystery",
+      "dialogues": [
+        {
+          "id": 10,
+          "text": "Hey! What's that? A Phoenix?",
+          "readMore": "Click to continue..."
+        }
+      ]
+    },
+    {
+      "groupId": 6,
+      "groupName": "phoenix",
       "dialogues": [
         {
           "id": 11,
-          "text": "Hey! What's that? You find a magical artifact hidden in the chamber..",
+          "text": "And... It dropped something..?",
+          "readMore": "Click to continue..."
+        }
+      ]
+    },
+    {
+      "groupId": 7,
+      "groupName": "phoenix",
+      "dialogues": [
+        {
+          "id": 12,
+          "text": "It seems to be a scroll, I wonder what it says..",
+          "readMore": "Click to continue..."
+        }
+      ]
+    },
+    {
+      "groupId": 8,
+      "groupName": "marauders map",
+      "dialogues": [
+        {
+          "id": 13,
+          "text": "*The scroll reads the following:*",
           "readMore": "Click to continue..."
         },
         {
-          "id": 12,
-          "text": "It seems to be a map.. I wonder what secrets it holds, and where it might lead to.",
-          "readMore": "Click to open map"
+          "id": 14,
+          "text": "\"Messrs. Moony, Wormtail, Padfoot and Prongs are proud to present the Marauder's Map.\"",
+          "readMore": "Click to continue..."
+        },
+        {
+          "id": 15,
+          "text": "Click to continue to the Marauder's Map.",
+          "readMore": "Continue to Marauder's Map →"
         }
       ]
     }

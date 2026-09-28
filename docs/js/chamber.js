@@ -9,7 +9,9 @@ const BASILISK_HISS_AUDIO_SOURCE = './assets/music/chamber/snake-hiss-1.mp3';
 const BASILISK_SECOND_HISS_AUDIO_SOURCE = './assets/music/chamber/snake-hiss-2.mp3';
 const BASILISK_TAUNT_FRAME_SOURCE = './assets/images/chamber/basilisk-taunt-1.png';
 const BASILISK_ENCHANTED_FRAME_SOURCE = './assets/images/chamber/basilisk-enchanted-1.png';
-const BASILISK_ENCHANTED_FINAL_FRAME_SOURCE = './assets/images/chamber/basilisk-enchanted-2.png';
+const BASILISK_ENCHANTED_SECOND_FRAME_SOURCE = './assets/images/chamber/basilisk-enchanted-2.png';
+const BASILISK_ENCHANTED_FINAL_FRAME_SOURCE = './assets/images/chamber/basilisk-enchanted-3.png';
+const CHAMBER_BASILISK_DEFEATED_AUDIO_SOURCE = './assets/music/fireworks.mp3';
 const BASILISK_SPELL_AUDIO_SOURCE_BY_DEPARTMENT = {
     hufflepuff: './assets/music/chamber/cedric-sectum.mp3',
     ravenclaw: './assets/music/chamber/luna-sectum.mp3',
@@ -25,18 +27,47 @@ const BASILISK_BACKDROP_DELAY_MS = BASILISK_FRAME_STEP_MS * 3 + 50;
 const BASILISK_BACKDROP_FADE_MS = 1800;
 const BASILISK_CHATBOX_DELAY_MS = BASILISK_BACKDROP_FADE_MS;
 const BASILISK_CONTINUE_DELAY_MS = 600;
+const BASILISK_CONTINUE_BUTTON_REVEAL_DELAY_MS = 250;
 const BASILISK_DIALOGUE_GROUP_REENTRY_DELAY_MS = BASILISK_FADE_IN_MS + 320;
 const BASILISK_STAFF_FADE_IN_MS = 800;
 const BASILISK_STAFF_SPELL_CAST_MS = 2400;
 const BASILISK_SPELL_PARTICLE_COUNT = 96;
 const BASILISK_DARK_SPELL_PARTICLE_COUNT = 168;
 const BASILISK_SPELL_PARTICLE_DELAY_MS = 420;
+const BASILISK_CAST_HISS_DELAY_MS = 200;
 const BASILISK_SLASH_FRAME_STEP_MS = 120;
 const BASILISK_SLASH_FRAME_HOLD_MS = 180;
 const BASILISK_TAUNT_DELAY_MS = 300;
 const BASILISK_ENCHANTED_TRANSITION_LEAD_MS = 4000;
 const BASILISK_FINAL_BACKDROP_FADE_IN_MS = 3000;
 const BASILISK_FINAL_BASILISK_FADE_TOTAL_DELAY_MS = 1500;
+const PHOENIX_FLIGHT_START_DELAY_MS = 2500;
+const PHOENIX_FLIGHT_DURATION_MS = 4000;
+const PHOENIX_FRAME_SWITCH_MS = 200;
+const PHOENIX_SCREECH_AUDIO_SOURCE = './assets/music/chamber/phoenix-screech.mp3';
+const PHOENIX_WINGS_AUDIO_SOURCE = './assets/music/chamber/phoenix-wings.mp3';
+const PHOENIX_PAPER_FALLING_AUDIO_SOURCE = './assets/music/chamber/paper-falling.mp3';
+const PHOENIX_PAPER_THUD_AUDIO_SOURCE = './assets/music/chamber/paper-thud.mp3';
+const CHAMBER_AUDIO_GESTURE_EVENTS = ['pointerdown', 'touchstart', 'click', 'keydown'];
+const PHOENIX_SCROLL_SOURCE = './assets/images/chamber/scroll.png';
+const PHOENIX_SCROLL_DROP_TRIGGER_RATIO = 0.5;
+const PHOENIX_SCROLL_DROP_DURATION_MS = 3600;
+const PHOENIX_SCROLL_THUD_LEAD_MS = 1050;
+const PHOENIX_SCROLL_TARGET_TOP_RATIO = 0.65;
+const PHOENIX_SCROLL_TARGET_LEFT_DRIFT_RATIO = 0.11;
+const PHOENIX_SCROLL_TARGET_LEFT_DRIFT_MAX_PX = 200;
+const PHOENIX_SCROLL_LANDING_OVERSHOOT_MAX_PX = 5;
+const PHOENIX_SCROLL_LANDING_BOUNCE_UP_MAX_PX = 18;
+const PHOENIX_SCROLL_FINAL_ROTATION_DEG = 34;
+const PHOENIX_SCROLL_IMPACT_PARTICLE_COUNT = 16;
+const PHOENIX_SCROLL_IMPACT_PARTICLE_DURATION_MS = 850;
+const PHOENIX_SCROLL_IMPACT_PARTICLE_SPREAD_PX = 110;
+const PHOENIX_FRAME_SOURCES = [
+    './assets/images/chamber/phoenix-1.png',
+    './assets/images/chamber/phoenix-2.png',
+    './assets/images/chamber/phoenix-3.png',
+    './assets/images/chamber/phoenix-4.png'
+];
 const CABIN_STORAGE_KEY = 'magical-winter-banquet.cabin';
 const CABIN_COOKIE_NAME = 'magical-winter-banquet.cabin';
 const CABIN_DEPARTMENTS = ['gryffindor', 'hufflepuff', 'ravenclaw', 'slytherin'];
@@ -49,8 +80,11 @@ const STAFF_SOURCE_BY_DEPARTMENT = {
 const BASILISK_PRELOADS = [
     ...BASILISK_FRAME_SOURCES.map(preloadImage),
     preloadImage(BASILISK_ENCHANTED_FRAME_SOURCE),
-    preloadImage('./assets/images/chamber/basilisk-enchanted-2.png'),
-    preloadImage('./assets/images/chatbox.png')
+    preloadImage(BASILISK_ENCHANTED_SECOND_FRAME_SOURCE),
+    preloadImage(BASILISK_ENCHANTED_FINAL_FRAME_SOURCE),
+    preloadImage('./assets/images/chatbox.png'),
+    ...PHOENIX_FRAME_SOURCES.map(preloadImage),
+    preloadImage(PHOENIX_SCROLL_SOURCE)
 ];
 
 async function loadBasiliskDialogue() {
@@ -73,22 +107,27 @@ async function loadBasiliskDialogue() {
         const thirdGroup = groups.find((group) => Number(group?.groupId) === 3);
         const fourthGroup = groups.find((group) => Number(group?.groupId) === 4);
         const fifthGroup = groups.find((group) => Number(group?.groupId) === 5);
+        const sixthGroup = groups.find((group) => Number(group?.groupId) === 6);
+        const seventhGroup = groups.find((group) => Number(group?.groupId) === 7);
 
         return {
             encounterDialogues: Array.isArray(encounterGroup?.dialogues) ? encounterGroup.dialogues : [],
             secondGroupDialogues: Array.isArray(secondGroup?.dialogues) ? secondGroup.dialogues : [],
             thirdGroupDialogues: Array.isArray(thirdGroup?.dialogues) ? thirdGroup.dialogues : [],
             fourthGroupDialogues: Array.isArray(fourthGroup?.dialogues) ? fourthGroup.dialogues : [],
-            fifthGroupDialogues: Array.isArray(fifthGroup?.dialogues) ? fifthGroup.dialogues : []
+            fifthGroupDialogues: Array.isArray(fifthGroup?.dialogues) ? fifthGroup.dialogues : [],
+            sixthGroupDialogues: Array.isArray(sixthGroup?.dialogues) ? sixthGroup.dialogues : [],
+            seventhGroupDialogues: Array.isArray(seventhGroup?.dialogues) ? seventhGroup.dialogues : []
         };
-    } catch (error) {
-        console.warn('Unable to load basilisk dialogue groups.', error);
+    } catch {
         return {
             encounterDialogues: [],
             secondGroupDialogues: [],
             thirdGroupDialogues: [],
             fourthGroupDialogues: [],
-            fifthGroupDialogues: []
+            fifthGroupDialogues: [],
+            sixthGroupDialogues: [],
+            seventhGroupDialogues: []
         };
     }
 }
@@ -100,6 +139,10 @@ function getDialogueEntry(dialogues, index) {
 const basiliskHissAudioBySource = Object.create(null);
 let basiliskSpellAudio = null;
 let basiliskSpellAudioSource = '';
+let phoenixFlightAudio = null;
+let phoenixWingsAudio = null;
+let phoenixPaperFallingAudio = null;
+let phoenixPaperThudAudio = null;
 
 function normalizeDepartment(value) {
     const normalizedDepartment = String(value ?? '').trim().toLowerCase();
@@ -179,11 +222,10 @@ function playBasiliskHissAudio(source = BASILISK_HISS_AUDIO_SOURCE) {
         return;
     }
 
+    audio.volume = source === BASILISK_HISS_AUDIO_SOURCE ? 0.25 : 1;
     audio.currentTime = 0;
 
-    void audio.play().catch((error) => {
-        console.info('Basilisk hiss audio autoplay was blocked by the browser.', error);
-    });
+    void audio.play().catch(() => {});
 }
 
 function getBasiliskSpellAudio(department) {
@@ -212,11 +254,178 @@ function playBasiliskSpellAudio(department) {
         return;
     }
 
+    audio.volume = department === 'slytherin' ? 0.5 : 0.15;
     audio.currentTime = 0;
 
-    void audio.play().catch((error) => {
-        console.info('Basilisk spell audio autoplay was blocked by the browser.', error);
+    void audio.play().catch(() => {});
+}
+
+function getPhoenixFlightAudio() {
+    if (phoenixFlightAudio instanceof HTMLAudioElement) {
+        return phoenixFlightAudio;
+    }
+
+    phoenixFlightAudio = new Audio(PHOENIX_SCREECH_AUDIO_SOURCE);
+    phoenixFlightAudio.src = PHOENIX_SCREECH_AUDIO_SOURCE;
+    phoenixFlightAudio.preload = 'auto';
+
+    return phoenixFlightAudio;
+}
+
+function getPhoenixWingsAudio() {
+    if (phoenixWingsAudio instanceof HTMLAudioElement) {
+        return phoenixWingsAudio;
+    }
+
+    phoenixWingsAudio = new Audio(PHOENIX_WINGS_AUDIO_SOURCE);
+    phoenixWingsAudio.src = PHOENIX_WINGS_AUDIO_SOURCE;
+    phoenixWingsAudio.preload = 'auto';
+
+    return phoenixWingsAudio;
+}
+
+function getPhoenixPaperFallingAudio() {
+    if (phoenixPaperFallingAudio instanceof HTMLAudioElement) {
+        return phoenixPaperFallingAudio;
+    }
+
+    phoenixPaperFallingAudio = new Audio(PHOENIX_PAPER_FALLING_AUDIO_SOURCE);
+    phoenixPaperFallingAudio.src = PHOENIX_PAPER_FALLING_AUDIO_SOURCE;
+    phoenixPaperFallingAudio.preload = 'auto';
+
+    return phoenixPaperFallingAudio;
+}
+
+function getPhoenixPaperThudAudio() {
+    if (phoenixPaperThudAudio instanceof HTMLAudioElement) {
+        return phoenixPaperThudAudio;
+    }
+
+    phoenixPaperThudAudio = new Audio(PHOENIX_PAPER_THUD_AUDIO_SOURCE);
+    phoenixPaperThudAudio.src = PHOENIX_PAPER_THUD_AUDIO_SOURCE;
+    phoenixPaperThudAudio.preload = 'auto';
+
+    return phoenixPaperThudAudio;
+}
+
+function playPhoenixPaperFallingAudio() {
+    const paperFallingAudio = getPhoenixPaperFallingAudio();
+
+    if (!(paperFallingAudio instanceof HTMLAudioElement)) {
+        return;
+    }
+
+    if (paperFallingAudio.readyState === HTMLMediaElement.HAVE_NOTHING) {
+        paperFallingAudio.load();
+    }
+
+    paperFallingAudio.volume = 1;
+    paperFallingAudio.muted = false;
+    paperFallingAudio.currentTime = 0;
+    void playAudioWithGestureRetry(paperFallingAudio, 'phoenix-paper-falling');
+}
+
+function playPhoenixPaperThudAudio() {
+    const paperThudAudio = getPhoenixPaperThudAudio();
+
+    if (!(paperThudAudio instanceof HTMLAudioElement)) {
+        return;
+    }
+
+    if (paperThudAudio.readyState === HTMLMediaElement.HAVE_NOTHING) {
+        paperThudAudio.load();
+    }
+
+    paperThudAudio.volume = 1;
+    paperThudAudio.muted = false;
+    paperThudAudio.currentTime = 0;
+    void playAudioWithGestureRetry(paperThudAudio, 'phoenix-paper-thud');
+}
+
+function playPhoenixFlightAudio() {
+    const screechAudio = getPhoenixFlightAudio();
+    const wingsAudio = getPhoenixWingsAudio();
+
+    if (screechAudio instanceof HTMLAudioElement) {
+        screechAudio.volume = 0.10;
+        screechAudio.muted = false;
+        screechAudio.currentTime = 0;
+        void playAudioWithGestureRetry(screechAudio, 'phoenix-screech');
+    }
+
+    if (wingsAudio instanceof HTMLAudioElement) {
+        if (wingsAudio.readyState === HTMLMediaElement.HAVE_NOTHING) {
+            wingsAudio.load();
+        }
+
+        wingsAudio.volume = 0.5;
+        wingsAudio.muted = false;
+        wingsAudio.currentTime = 0;
+
+        window.setTimeout(() => {
+            void playAudioWithGestureRetry(wingsAudio, 'phoenix-wings');
+        }, 200);
+    }
+}
+
+function playAudioWithGestureRetry(audio, label) {
+    if (!(audio instanceof HTMLAudioElement)) {
+        return Promise.resolve(false);
+    }
+
+    const attemptPlay = () => audio.play().then(() => true).catch((error) => {
+        const isGestureRequired = error?.name === 'NotAllowedError';
+
+        if (!isGestureRequired) {
+            return false;
+        }
+
+        if (audio.dataset.retryOnGesturePending === '1') {
+            return false;
+        }
+
+        const retryOnGesture = () => {
+            audio.dataset.retryOnGesturePending = '0';
+            void attemptPlay();
+        };
+
+        audio.dataset.retryOnGesturePending = '1';
+
+        for (const eventName of CHAMBER_AUDIO_GESTURE_EVENTS) {
+            document.addEventListener(eventName, retryOnGesture, { once: true, capture: true });
+        }
+
+        return false;
     });
+
+    return attemptPlay();
+}
+
+function stopPhoenixFlightAudio() {
+    const screechAudio = getPhoenixFlightAudio();
+    const wingsAudio = getPhoenixWingsAudio();
+    const paperFallingAudio = getPhoenixPaperFallingAudio();
+    const paperThudAudio = getPhoenixPaperThudAudio();
+
+    if (screechAudio instanceof HTMLAudioElement) {
+        screechAudio.pause();
+        screechAudio.currentTime = 0;
+    }
+
+    if (wingsAudio instanceof HTMLAudioElement) {
+        wingsAudio.pause();
+        wingsAudio.currentTime = 0;
+    }
+
+    if (paperFallingAudio instanceof HTMLAudioElement) {
+        paperFallingAudio.pause();
+        paperFallingAudio.currentTime = 0;
+    }
+
+    if (paperThudAudio instanceof HTMLAudioElement) {
+        paperThudAudio.pause();
+        paperThudAudio.currentTime = 0;
+    }
 }
 
 function createBasiliskLayer() {
@@ -242,7 +451,7 @@ function createBasiliskStaffLayer() {
     const staffLayer = document.createElement('div');
 
     staffLayer.setAttribute('aria-hidden', 'true');
-    staffLayer.className = 'pointer-events-none fixed bottom-[212px] left-[154px] z-[5] aspect-[16/9] w-[min(64vw,44rem)] bg-contain bg-center bg-no-repeat opacity-0 transition-opacity ease-out';
+    staffLayer.className = 'pointer-events-none fixed bottom-[212px] left-[154px] z-[7] aspect-[16/9] w-[min(64vw,44rem)] bg-contain bg-center bg-no-repeat opacity-0 transition-opacity ease-out';
     staffLayer.style.transitionDuration = `${BASILISK_STAFF_FADE_IN_MS}ms`;
     staffLayer.style.transform = 'rotate(-130deg)';
     staffLayer.style.transformOrigin = 'bottom center';
@@ -264,11 +473,11 @@ function createBasiliskChatbox(continueLabel, textContent = '') {
     const text = document.createElement('p');
 
     chatbox.setAttribute('aria-hidden', 'true');
-    chatbox.className = "pointer-events-none fixed bottom-8 left-1/2 z-[5] flex w-[min(92vw,72rem)] -translate-x-1/2 items-center justify-center bg-[url('../assets/images/chatbox.png')] bg-contain bg-center bg-no-repeat px-[clamp(1.25rem,2.5vw,2.75rem)] pt-[clamp(1.5rem,3vw,3rem)] pb-[clamp(2.2rem,3vw,3rem)] opacity-0 transition-opacity ease-out";
+    chatbox.className = "pointer-events-none fixed bottom-8 left-1/2 z-[8] flex h-[clamp(9.5rem,19vw,13rem)] w-[min(92vw,72rem)] -translate-x-1/2 items-start justify-start bg-[url('../assets/images/chatbox.png')] bg-contain bg-center bg-no-repeat px-[clamp(1.25rem,2.5vw,2.75rem)] pt-[clamp(2.95rem,5vw,4.75rem)] pb-[clamp(2.2rem,3vw,3rem)] opacity-0 transition-opacity ease-out";
     chatbox.style.transitionDuration = `${BASILISK_FADE_IN_MS}ms`;
     chatbox.style.pointerEvents = 'auto';
 
-    text.className = 'max-w-[72ch] text-left font-inkpot text-sm leading-relaxed tracking-wide text-[#3a2413] drop-shadow-[0_1px_0_rgba(255,244,223,0.35)]';
+    text.className = 'max-w-[72ch] self-start text-left font-inkpot text-sm leading-relaxed tracking-wide text-[#3a2413] drop-shadow-[0_1px_0_rgba(255,244,223,0.35)]';
     text.textContent = textContent;
     chatbox.appendChild(text);
     chatbox.appendChild(continueLabel);
@@ -281,7 +490,7 @@ function createBasiliskContinueLabel(labelText = '') {
 
     label.type = 'button';
     label.setAttribute('aria-label', 'Continue basilisk dialogue');
-    label.className = 'pointer-events-none absolute bottom-4 right-5 z-[6] opacity-0 transition-opacity ease-out';
+    label.className = 'pointer-events-none absolute bottom-10 right-5 z-[6] opacity-0 transition-opacity ease-out';
     label.style.transitionDuration = `${BASILISK_FADE_IN_MS}ms`;
     label.style.pointerEvents = 'none';
     label.textContent = labelText;
@@ -296,10 +505,19 @@ function showBasiliskBackdrop(backdrop) {
 }
 
 function showBasiliskChatbox(chatbox) {
+    chatbox.setAttribute('aria-hidden', 'false');
+    chatbox.style.pointerEvents = 'auto';
     chatbox.style.opacity = '1';
 }
 
 function hideBasiliskChatbox(chatbox) {
+    const focusedElement = document.activeElement;
+
+    if (focusedElement instanceof HTMLElement && chatbox.contains(focusedElement)) {
+        focusedElement.blur();
+    }
+
+    chatbox.setAttribute('aria-hidden', 'true');
     chatbox.style.opacity = '0';
     chatbox.style.pointerEvents = 'none';
 }
@@ -401,7 +619,7 @@ function emitBasiliskSpellParticles(particlesLayer, originX, originY, department
     }
 }
 
-function playBasiliskStaffSpellCast(staffLayer, particlesLayer, basiliskLayer, prefersReducedMotion, department, onEnchantedShown, enchantedFrameSource = BASILISK_ENCHANTED_FRAME_SOURCE, hissAudioSource = BASILISK_HISS_AUDIO_SOURCE) {
+function playBasiliskStaffSpellCast(staffLayer, particlesLayer, basiliskLayer, prefersReducedMotion, department, onEnchantedShown, enchantedFrameSource = BASILISK_ENCHANTED_FRAME_SOURCE, hissAudioSource = BASILISK_HISS_AUDIO_SOURCE, transitionFrameSource = BASILISK_TAUNT_FRAME_SOURCE) {
     const swing = staffLayer.animate([
         { transform: 'rotate(-130deg)' },
         { transform: 'rotate(-124deg)', offset: 0.18 },
@@ -419,7 +637,9 @@ function playBasiliskStaffSpellCast(staffLayer, particlesLayer, basiliskLayer, p
     if (prefersReducedMotion) {
         window.setTimeout(() => {
             showFrame(basiliskLayer, enchantedFrameSource);
-            playBasiliskHissAudio(hissAudioSource);
+            window.setTimeout(() => {
+                playBasiliskHissAudio(hissAudioSource);
+            }, BASILISK_CAST_HISS_DELAY_MS);
 
             if (typeof onEnchantedShown === 'function') {
                 onEnchantedShown();
@@ -434,8 +654,10 @@ function playBasiliskStaffSpellCast(staffLayer, particlesLayer, basiliskLayer, p
 
     playBasiliskSpellAudio(department);
     window.setTimeout(() => {
-        showFrame(basiliskLayer, BASILISK_TAUNT_FRAME_SOURCE);
-        playBasiliskHissAudio(hissAudioSource);
+        showFrame(basiliskLayer, transitionFrameSource);
+        window.setTimeout(() => {
+            playBasiliskHissAudio(hissAudioSource);
+        }, BASILISK_CAST_HISS_DELAY_MS);
 
         emitBasiliskSpellParticles(particlesLayer, originX, originY, department, () => {
             window.setTimeout(() => {
@@ -451,12 +673,33 @@ function playBasiliskStaffSpellCast(staffLayer, particlesLayer, basiliskLayer, p
     return swing;
 }
 
-function showBasiliskContinueLabel(label) {
-    label.style.pointerEvents = 'auto';
-    label.style.opacity = '1';
+function showBasiliskContinueLabel(label, delayMs = BASILISK_CONTINUE_BUTTON_REVEAL_DELAY_MS) {
+    const pendingTimeoutId = Number(label.dataset.showTimeoutId || 0);
+
+    if (pendingTimeoutId) {
+        window.clearTimeout(pendingTimeoutId);
+    }
+
+    label.style.pointerEvents = 'none';
+    label.style.opacity = '0';
+
+    const timeoutId = window.setTimeout(() => {
+        label.dataset.showTimeoutId = '';
+        label.style.pointerEvents = 'auto';
+        label.style.opacity = '1';
+    }, delayMs);
+
+    label.dataset.showTimeoutId = String(timeoutId);
 }
 
 function hideBasiliskContinueLabel(label) {
+    const pendingTimeoutId = Number(label.dataset.showTimeoutId || 0);
+
+    if (pendingTimeoutId) {
+        window.clearTimeout(pendingTimeoutId);
+        label.dataset.showTimeoutId = '';
+    }
+
     label.style.pointerEvents = 'none';
     label.style.opacity = '0';
 }
@@ -497,6 +740,269 @@ function fadeOutBasiliskAfterFinalBackdrop(basiliskLayer) {
     }, BASILISK_FINAL_BASILISK_FADE_TOTAL_DELAY_MS);
 }
 
+function createPhoenixLayer() {
+    const layer = document.createElement('div');
+
+    layer.setAttribute('aria-hidden', 'true');
+    layer.className = 'pointer-events-none fixed top-[50px] z-[6] aspect-[16/9] w-[min(35vw,24rem)] bg-contain bg-center bg-no-repeat opacity-0';
+    layer.style.right = '50vw';
+
+    return layer;
+}
+
+function createPhoenixScrollLayer() {
+    const layer = document.createElement('div');
+
+    layer.setAttribute('aria-hidden', 'true');
+    layer.className = 'pointer-events-none fixed left-1/2 top-[10%] z-[5] aspect-[3/4] w-[min(12vw,8rem)] -translate-x-1/2 bg-contain bg-center bg-no-repeat opacity-0';
+    layer.style.backgroundImage = `url('${PHOENIX_SCROLL_SOURCE}')`;
+
+    return layer;
+}
+
+function emitPhoenixScrollImpactParticles(hostElement, originX, originY) {
+    if (!(hostElement instanceof HTMLElement)) {
+        return;
+    }
+
+    for (let index = 0; index < PHOENIX_SCROLL_IMPACT_PARTICLE_COUNT; index += 1) {
+        const particle = document.createElement('span');
+        const angle = -Math.PI + Math.random() * Math.PI;
+        const distance = 14 + Math.random() * PHOENIX_SCROLL_IMPACT_PARTICLE_SPREAD_PX;
+        const deltaX = Math.cos(angle) * distance;
+        const deltaY = -Math.abs(Math.sin(angle) * (10 + Math.random() * 38));
+        const size = 1.5 + Math.random() * 4.5;
+        const duration = PHOENIX_SCROLL_IMPACT_PARTICLE_DURATION_MS * (0.72 + Math.random() * 0.42);
+        const hue = 30 + Math.random() * 16;
+        const saturation = 74 + Math.random() * 24;
+        const lightness = 52 + Math.random() * 18;
+        const rotation = -24 + Math.random() * 48;
+
+        particle.setAttribute('aria-hidden', 'true');
+        particle.className = 'pointer-events-none fixed z-[6] mix-blend-screen will-change-transform';
+        particle.style.left = `${originX}px`;
+        particle.style.top = `${originY}px`;
+        particle.style.width = `${size * (0.7 + Math.random() * 1.8)}px`;
+        particle.style.height = `${size}px`;
+        particle.style.borderRadius = Math.random() < 0.5 ? '9999px' : '20%';
+        particle.style.background = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.88)`;
+        particle.style.boxShadow = `0 0 ${6 + size}px hsla(${hue}, ${saturation}%, ${lightness + 4}%, 0.62)`;
+        particle.style.opacity = '0';
+
+        hostElement.appendChild(particle);
+
+        const animation = particle.animate([
+            {
+                transform: `translate3d(0, 0, 0) rotate(${rotation}deg) scale(0.65)`,
+                opacity: 0
+            },
+            {
+                transform: `translate3d(${deltaX * 0.48}px, ${deltaY * 0.48}px, 0) rotate(${rotation + 16}deg) scale(1)`,
+                opacity: 0.95,
+                offset: 0.24
+            },
+            {
+                transform: `translate3d(${deltaX}px, ${deltaY + 18}px, 0) rotate(${rotation + 30}deg) scale(0.72)`,
+                opacity: 0
+            }
+        ], {
+            duration,
+            easing: 'cubic-bezier(0.12, 0.64, 0.16, 1)',
+            fill: 'forwards'
+        });
+
+        animation.addEventListener('finish', () => {
+            particle.remove();
+        }, { once: true });
+    }
+}
+
+function dropPhoenixScroll(phoenixLayer, phoenixScrollLayer, prefersReducedMotion) {
+    if (!(phoenixScrollLayer instanceof HTMLElement)) {
+        return;
+    }
+
+    playPhoenixPaperFallingAudio();
+    const dropDuration = prefersReducedMotion ? 1 : PHOENIX_SCROLL_DROP_DURATION_MS;
+    const thudDelay = prefersReducedMotion
+        ? 0
+        : Math.max(
+            0,
+            Math.max(
+                dropDuration - PHOENIX_SCROLL_THUD_LEAD_MS,
+                Math.round(dropDuration * 0.88)
+            )
+        );
+    window.setTimeout(() => {
+        playPhoenixPaperThudAudio();
+    }, thudDelay);
+
+    const phoenixRect = phoenixLayer.getBoundingClientRect();
+    const startX = phoenixRect.left + phoenixRect.width * 0.52;
+    const startY = phoenixRect.top + phoenixRect.height * 0.78;
+    const targetTopPx = window.innerHeight * PHOENIX_SCROLL_TARGET_TOP_RATIO;
+    const leftDriftPx = Math.min(window.innerWidth * PHOENIX_SCROLL_TARGET_LEFT_DRIFT_RATIO, PHOENIX_SCROLL_TARGET_LEFT_DRIFT_MAX_PX);
+    const targetX = Math.max(40, startX - leftDriftPx);
+    const maxTravel = Math.max(0, window.innerHeight - startY - 40);
+    const clampedTargetTopPx = Math.min(targetTopPx, startY + maxTravel);
+    const dropDistancePx = Math.max(40, clampedTargetTopPx - startY);
+    const landingOvershootPx = prefersReducedMotion
+        ? 0
+        : Math.min(PHOENIX_SCROLL_LANDING_OVERSHOOT_MAX_PX, Math.max(14, dropDistancePx * 0.14));
+    const bounceUpPx = prefersReducedMotion
+        ? 0
+        : Math.min(PHOENIX_SCROLL_LANDING_BOUNCE_UP_MAX_PX, Math.max(7, landingOvershootPx * 0.52));
+    const overshootTopPx = Math.min(window.innerHeight - 20, clampedTargetTopPx + landingOvershootPx);
+    const bounceTopPx = Math.max(startY + 18, clampedTargetTopPx - bounceUpPx);
+    const scrollRect = phoenixScrollLayer.getBoundingClientRect();
+    const impactY = clampedTargetTopPx + Math.max(10, scrollRect.height * 0.42);
+
+    phoenixScrollLayer.getAnimations().forEach((animation) => animation.cancel());
+    phoenixScrollLayer.style.left = `${startX}px`;
+    phoenixScrollLayer.style.top = `${startY}px`;
+    phoenixScrollLayer.style.opacity = '1';
+
+    if (!prefersReducedMotion) {
+        window.setTimeout(() => {
+            emitPhoenixScrollImpactParticles(document.body, targetX, impactY);
+        }, thudDelay);
+    }
+
+    phoenixScrollLayer.animate([
+        {
+            left: `${startX}px`,
+            top: `${startY}px`,
+            transform: 'translateX(-50%) rotate(0deg)',
+            opacity: 0.95
+        },
+        {
+            left: `${startX - leftDriftPx * 0.18}px`,
+            top: `${startY + (clampedTargetTopPx - startY) * 0.2}px`,
+            transform: 'translateX(-50%) rotate(-17deg)',
+            opacity: 1,
+            offset: 0.2
+        },
+        {
+            left: `${startX - leftDriftPx * 0.42}px`,
+            top: `${startY + (clampedTargetTopPx - startY) * 0.42}px`,
+            transform: 'translateX(-50%) rotate(22deg)',
+            opacity: 1,
+            offset: 0.42
+        },
+        {
+            left: `${startX - leftDriftPx * 0.7}px`,
+            top: `${startY + (clampedTargetTopPx - startY) * 0.66}px`,
+            transform: 'translateX(-50%) rotate(-15deg)',
+            opacity: 1,
+            offset: 0.66
+        },
+        {
+            left: `${targetX}px`,
+            top: `${clampedTargetTopPx}px`,
+            transform: 'translateX(-50%) rotate(12deg)',
+            opacity: 1,
+            offset: 0.82
+        },
+        {
+            left: `${targetX}px`,
+            top: `${overshootTopPx}px`,
+            transform: `translateX(-50%) rotate(${PHOENIX_SCROLL_FINAL_ROTATION_DEG + 14}deg)`,
+            opacity: 1,
+            offset: 0.9
+        },
+        {
+            left: `${targetX}px`,
+            top: `${bounceTopPx}px`,
+            transform: `translateX(-50%) rotate(${PHOENIX_SCROLL_FINAL_ROTATION_DEG - 7}deg)`,
+            opacity: 1,
+            offset: 0.965
+        },
+        {
+            left: `${targetX}px`,
+            top: `${clampedTargetTopPx}px`,
+            transform: `translateX(-50%) rotate(${PHOENIX_SCROLL_FINAL_ROTATION_DEG}deg)`,
+            opacity: 1
+        }
+    ], {
+        duration: dropDuration,
+        easing: prefersReducedMotion ? 'linear' : 'cubic-bezier(0.22, 0.78, 0.22, 1)',
+        fill: 'forwards'
+    });
+
+    phoenixScrollLayer.style.left = `${targetX}px`;
+    phoenixScrollLayer.style.top = `${clampedTargetTopPx}px`;
+    phoenixScrollLayer.style.transform = `translateX(-50%) rotate(${PHOENIX_SCROLL_FINAL_ROTATION_DEG}deg)`;
+}
+
+function playPhoenixFlight(phoenixLayer, phoenixScrollLayer, onComplete) {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    playPhoenixFlightAudio();
+    phoenixLayer.style.opacity = '1';
+    phoenixLayer.style.backgroundImage = `url('${PHOENIX_FRAME_SOURCES[0]}')`;
+    phoenixScrollLayer.style.opacity = '0';
+    let frameIndex = 0;
+    const scrollDropTimeoutId = window.setTimeout(() => {
+        dropPhoenixScroll(phoenixLayer, phoenixScrollLayer, prefersReducedMotion);
+    }, Math.round(PHOENIX_FLIGHT_DURATION_MS * PHOENIX_SCROLL_DROP_TRIGGER_RATIO));
+
+    const frameIntervalId = window.setInterval(() => {
+        frameIndex = (frameIndex + 1) % PHOENIX_FRAME_SOURCES.length;
+        phoenixLayer.style.backgroundImage = `url('${PHOENIX_FRAME_SOURCES[frameIndex]}')`;
+    }, PHOENIX_FRAME_SWITCH_MS);
+
+    const animation = phoenixLayer.animate([{
+        right: '-50vw',
+        opacity: '1'
+    }, {
+        right: '100vw',
+        opacity: '1'
+    }], {
+        duration: PHOENIX_FLIGHT_DURATION_MS,
+        easing: 'linear',
+        fill: 'forwards'
+    });
+
+    animation.addEventListener('finish', () => {
+        window.clearTimeout(scrollDropTimeoutId);
+        window.clearInterval(frameIntervalId);
+        phoenixLayer.style.opacity = '0';
+        stopPhoenixFlightAudio();
+        if (typeof onComplete === 'function') {
+            onComplete();
+        }
+    }, { once: true });
+}
+
+function replaceBackgroundAudioAfterBasiliskDefeat() {
+    const audio = document.getElementById('background-audio');
+
+    if (!(audio instanceof HTMLAudioElement)) {
+        return;
+    }
+
+    const sourceElement = audio.querySelector('source[src]');
+    const activeSource = sourceElement instanceof HTMLSourceElement
+        ? sourceElement.getAttribute('src') || ''
+        : audio.getAttribute('src') || '';
+
+    if (activeSource === CHAMBER_BASILISK_DEFEATED_AUDIO_SOURCE) {
+        return;
+    }
+
+    if (sourceElement instanceof HTMLSourceElement) {
+        sourceElement.setAttribute('src', CHAMBER_BASILISK_DEFEATED_AUDIO_SOURCE);
+    } else {
+        audio.setAttribute('src', CHAMBER_BASILISK_DEFEATED_AUDIO_SOURCE);
+    }
+
+    audio.load();
+
+    if (window.audioIsEnabled) {
+        void audio.play().catch(() => {});
+    }
+}
+
 function startBasiliskSequence(layer, backdrop, chatbox, continueLabel, onContinueShown) {
     const timeoutIds = [];
 
@@ -524,7 +1030,7 @@ function startBasiliskSequence(layer, backdrop, chatbox, continueLabel, onContin
             showBasiliskContinueLabel(continueLabel);
 
             if (typeof onContinueShown === 'function') {
-                onContinueShown();
+                window.setTimeout(onContinueShown, BASILISK_CONTINUE_BUTTON_REVEAL_DELAY_MS);
             }
         }, BASILISK_BACKDROP_DELAY_MS + BASILISK_CHATBOX_DELAY_MS + BASILISK_CONTINUE_DELAY_MS);
     };
@@ -562,6 +1068,8 @@ async function initChamberScene() {
     const thirdGroupDialogues = dialogueGroups.thirdGroupDialogues;
     const fourthGroupDialogues = dialogueGroups.fourthGroupDialogues;
     const fifthGroupDialogues = dialogueGroups.fifthGroupDialogues;
+    const sixthGroupDialogues = dialogueGroups.sixthGroupDialogues;
+    const seventhGroupDialogues = dialogueGroups.seventhGroupDialogues;
 
     if (encounterDialogues.length === 0) {
         return;
@@ -573,6 +1081,8 @@ async function initChamberScene() {
     const basiliskBackdrop = createBasiliskBackdrop();
     const basiliskStaffLayer = createBasiliskStaffLayer();
     const basiliskSpellParticlesLayer = createBasiliskSpellParticlesLayer();
+    const phoenixLayer = createPhoenixLayer();
+    const phoenixScrollLayer = createPhoenixScrollLayer();
     const basiliskContinueLabel = createBasiliskContinueLabel(firstDialogue?.readMore || '');
     const basiliskChatbox = createBasiliskChatbox(basiliskContinueLabel, firstDialogue?.text || '');
     let activeDialogues = encounterDialogues;
@@ -587,7 +1097,9 @@ async function initChamberScene() {
         2: secondGroupDialogues,
         3: thirdGroupDialogues,
         4: fourthGroupDialogues,
-        5: fifthGroupDialogues
+        5: fifthGroupDialogues,
+        6: sixthGroupDialogues,
+        7: seventhGroupDialogues
     };
 
     const transitionToDialogueGroup = (groupId, delayMs = 0) => {
@@ -606,12 +1118,19 @@ async function initChamberScene() {
             if (currentGroupId === 4) {
                 showFinalBackdropSlowly();
                 fadeOutBasiliskAfterFinalBackdrop(basiliskLayer);
+                replaceBackgroundAudioAfterBasiliskDefeat();
+            }
+
+            if (currentGroupId === 5) {
+                playPhoenixFlight(phoenixLayer, phoenixScrollLayer);
             }
 
             updateBasiliskDialogue(basiliskChatbox, basiliskContinueLabel, activeDialogues, currentDialogueIndex);
             showBasiliskChatbox(basiliskChatbox);
             showBasiliskContinueLabel(basiliskContinueLabel);
-            isContinueVisible = true;
+            window.setTimeout(() => {
+                isContinueVisible = true;
+            }, BASILISK_CONTINUE_BUTTON_REVEAL_DELAY_MS);
             isTransitioningGroup = false;
         }, delayMs);
     };
@@ -652,12 +1171,21 @@ async function initChamberScene() {
                         transitionToDialogueGroup(nextGroupId);
                     },
                     currentGroupId === 3 ? BASILISK_ENCHANTED_FINAL_FRAME_SOURCE : BASILISK_ENCHANTED_FRAME_SOURCE,
-                    currentGroupId === 3 ? BASILISK_SECOND_HISS_AUDIO_SOURCE : BASILISK_HISS_AUDIO_SOURCE
+                    currentGroupId === 3 ? BASILISK_SECOND_HISS_AUDIO_SOURCE : BASILISK_HISS_AUDIO_SOURCE,
+                    currentGroupId === 3 ? BASILISK_ENCHANTED_SECOND_FRAME_SOURCE : BASILISK_TAUNT_FRAME_SOURCE
                 );
             } else if (currentGroupId === 4) {
                 isTransitioningGroup = true;
 
                 transitionToDialogueGroup(5, BASILISK_DIALOGUE_GROUP_REENTRY_DELAY_MS);
+            } else if (currentGroupId === 5) {
+                isTransitioningGroup = true;
+
+                transitionToDialogueGroup(6, BASILISK_DIALOGUE_GROUP_REENTRY_DELAY_MS);
+            } else if (currentGroupId === 6) {
+                isTransitioningGroup = true;
+
+                transitionToDialogueGroup(7, BASILISK_DIALOGUE_GROUP_REENTRY_DELAY_MS);
             }
 
             return;
@@ -671,10 +1199,14 @@ async function initChamberScene() {
     basiliskStaffLayer.id = 'basilisk-staff-layer';
     basiliskSpellParticlesLayer.id = 'basilisk-spell-particles-layer';
     basiliskChatbox.id = 'basilisk-chatbox';
+    phoenixLayer.id = 'phoenix-layer';
+    phoenixScrollLayer.id = 'phoenix-scroll-layer';
     body.appendChild(basiliskBackdrop);
     body.appendChild(basiliskLayer);
     body.appendChild(basiliskStaffLayer);
     body.appendChild(basiliskSpellParticlesLayer);
+    body.appendChild(phoenixLayer);
+    body.appendChild(phoenixScrollLayer);
     body.appendChild(basiliskChatbox);
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -687,7 +1219,9 @@ async function initChamberScene() {
             window.setTimeout(() => showBasiliskChatbox(basiliskChatbox), BASILISK_CHATBOX_DELAY_MS);
             window.setTimeout(() => {
                 showBasiliskContinueLabel(basiliskContinueLabel);
-                isContinueVisible = true;
+                window.setTimeout(() => {
+                    isContinueVisible = true;
+                }, BASILISK_CONTINUE_BUTTON_REVEAL_DELAY_MS);
             }, BASILISK_CHATBOX_DELAY_MS + BASILISK_CONTINUE_DELAY_MS);
         }, BASILISK_APPEAR_DELAY_MS);
         return;
@@ -697,6 +1231,42 @@ async function initChamberScene() {
         isContinueVisible = true;
     });
 }
+
+const CHAMBER_AUDIO_UNLOCK_EVENTS = [...CHAMBER_AUDIO_GESTURE_EVENTS];
+
+function unlockChamberBackgroundAudio() {
+    const audio = document.getElementById('background-audio');
+
+    if (!(audio instanceof HTMLAudioElement)) {
+        return;
+    }
+
+    audio.muted = false;
+
+    if (audio.readyState === HTMLMediaElement.HAVE_NOTHING) {
+        audio.load();
+    }
+
+    void audio.play().then(() => {
+        window.audioIsEnabled = true;
+    }).catch(() => {});
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const audio = document.getElementById('background-audio');
+
+    if (!(audio instanceof HTMLAudioElement)) {
+        return;
+    }
+
+    const maybeStartAudio = () => {
+        unlockChamberBackgroundAudio();
+    };
+
+    for (const eventName of CHAMBER_AUDIO_UNLOCK_EVENTS) {
+        document.addEventListener(eventName, maybeStartAudio, { capture: true });
+    }
+}, { once: true });
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {

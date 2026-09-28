@@ -99,22 +99,23 @@ function initRsvpFormSubmission() {
     const burntPaper = document.querySelector('.burnt-paper-fade-out');
     let isSubmitting = false;
 
-    const setChoiceSubmittingState = (isSubmittingState) => {
-        choiceButtons.forEach((button) => {
-            button.classList.toggle('text-black', isSubmittingState);
-            button.classList.toggle('text-charcoal/85', !isSubmittingState);
-        });
+    const setChoiceSubmittingState = () => {
+        // Keep the selected and unselected choice states unchanged while submitting.
     };
 
     const setActiveChoice = (activeChoice) => {
         choiceButtons.forEach((button) => {
             button.classList.add('opacity-45');
             button.classList.remove('opacity-100');
+            button.classList.remove('text-black');
+            button.classList.add('text-charcoal/85');
         });
 
         if (activeChoice instanceof HTMLButtonElement) {
             activeChoice.classList.remove('opacity-45');
             activeChoice.classList.add('opacity-100');
+            activeChoice.classList.remove('text-charcoal/85');
+            activeChoice.classList.add('text-black');
         }
     };
 
@@ -155,7 +156,7 @@ function initRsvpFormSubmission() {
         }
 
         isSubmitting = true;
-        setChoiceSubmittingState(true);
+        setChoiceSubmittingState();
 
         choiceButtons.forEach((button) => {
             button.disabled = true;
@@ -172,7 +173,7 @@ function initRsvpFormSubmission() {
             window.location.assign('./sorting/');
         } catch {
             isSubmitting = false;
-            setChoiceSubmittingState(false);
+            setChoiceSubmittingState();
             if (burntPaper) {
                 burntPaper.classList.remove('burnt-paper-fade-out');
             }

@@ -2,12 +2,12 @@
   "fileName": "anything-from-the-trolley.mp3",
   "sentences": [
     {
-      "text": "Aaanything from the trolley?",
+      "text": "Aanything from the trolley?",
       "durationMs": 4200
     },
     {
-      "text": "Anything from the trolley?",
-      "durationMs": 4000
+      "text": "Aaaanything from the trolley?",
+      "durationMs": 3500
     }
   ]
 }

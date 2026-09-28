@@ -721,7 +721,7 @@ async function initDishSelection() {
         const isSelected = selectedDishIds.has(dishId);
         const isOccupied = occupiedDishIds.has(dishId);
         const shouldDisable = isOccupied || (!isSelected && selectedDishIds.size >= DISH_SELECTION_LIMIT);
-        const shouldDim = !isSelected && selectedDishIds.size > 0;
+        const shouldDim = !isSelected && selectedDishIds.size >= DISH_SELECTION_LIMIT;
         const dishNameElement = button.querySelector('[data-dish-choice-name]');
         const dishDescriptionElement = button.querySelector('[data-dish-choice-description]');
 
